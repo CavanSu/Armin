@@ -9,7 +9,7 @@
 #import "ViewController.h"
 #import <Armin/Armin-Swift.h>
 
-@interface ViewController ()
+@interface ViewController () <ArminDelegateOC, ArLogTube>
 @property (nonatomic, strong) ArminOC *client;
 @end
 
@@ -17,8 +17,8 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    
-    self.client = [[ArminOC alloc] init];
+    self.client = [[ArminOC alloc] initWithDelegate:self
+                                            logTube:self];
     [self getRequest];
 }
 
@@ -41,13 +41,56 @@
                                                                      @"callback": @"0"}];
     
     [self.client requestWithTask:task
-        responseOnMainQueue:YES
-     successCallbackContent:ArResponseTypeOCJson
-                    success:^(ArResponseOC * _Nonnull response) {
+             responseOnMainQueue:YES
+          successCallbackContent:ArResponseTypeOCJson
+                         success:^(ArResponseOC * _Nonnull response) {
         NSLog(@"weather json: %@", response.json);
     } failRetryInterval:-1 fail:^(NSError * _Nonnull error) {
         NSLog(@"error: %@", error.localizedDescription);
     }];
+}
+
+- (void)postRequest {
+    NSString *url = @"";
+    ArRequestEventOC *event = [[ArRequestEventOC alloc] initWithName:@"Sample-Post"];
+    ArRequestTypeObjectOC *type = [[ArRequestTypeJsonObjectOC alloc] initWithMethod:ArHTTPMethodOCPost
+                                                                                url:url];
+    
+    ArRequestTaskOC *task = [[ArRequestTaskOC alloc] initWithEvent:event
+                                                              type:type
+                                                           timeout:10
+                                                            header:nil
+                                                        parameters:nil];
+    
+    [self.client requestWithTask:task
+             responseOnMainQueue:YES
+          successCallbackContent:ArResponseTypeOCJson
+                         success:^(ArResponseOC * _Nonnull response) {
+        NSLog(@"weather json: %@", response.json);
+    } failRetryInterval:-1 fail:^(NSError * _Nonnull error) {
+        NSLog(@"error: %@", error.localizedDescription);
+    }];
+}
+
+#pragma mark - ArminDelegateOC, ArLogTube
+- (void)armin:(ArminOC *)client requestSuccess:(ArRequestEventOC *)event startTime:(NSTimeInterval)startTime url:(NSString *)url {
+    NSLog(@"event: %@, requestSuccess, url: %@", event.name, url);
+}
+
+- (void)armin:(ArminOC *)client requestFail:(ArErrorOC *)error event:(ArRequestEventOC *)event url:(NSString *)url {
+    NSLog(@"event: %@, requestFail, url: %@", event.name, url);
+}
+
+- (void)logWithInfo:(NSString *)info extra:(NSString *)extra {
+    NSLog(@"log info: %@, extra: %@", info, extra);
+}
+
+- (void)logWithWarning:(NSString *)warning extra:(NSString *)extra {
+    NSLog(@"log warning: %@, extra: %@", warning, extra);
+}
+
+- (void)logWithError:(NSError *)error extra:(NSString *)extra {
+    NSLog(@"log error: %@, extra: %@", error, extra);
 }
 
 @end

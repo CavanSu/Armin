@@ -8,10 +8,10 @@
 
 import Foundation
 
-public protocol ArLogTube: NSObjectProtocol {
-    func log(info: String, extral: String?)
-    func log(warning: String, extral: String?)
-    func log(error: Error, extral: String?)
+@objc public protocol ArLogTube: NSObjectProtocol {
+    func log(info: String, extra: String?)
+    func log(warning: String, extra: String?)
+    func log(error: Error, extra: String?)
 }
 
 public protocol ArRequestEventProtocol: CustomStringConvertible {

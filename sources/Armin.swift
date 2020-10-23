@@ -9,16 +9,16 @@
 import Alamofire
 
 public protocol ArminDelegate: NSObjectProtocol {
-    func alamo(_ client: Armin, requestSuccess event: ArRequestEvent, startTime: TimeInterval, url: String)
-    func alamo(_ client: Armin, requestFail error: ArError, event: ArRequestEvent, url: String)
+    func armin(_ client: Armin, requestSuccess event: ArRequestEvent, startTime: TimeInterval, url: String)
+    func armin(_ client: Armin, requestFail error: ArError, event: ArRequestEvent, url: String)
 }
 
 public class Armin: NSObject, ArRequestAPIsProtocol {
     private lazy var instances = [Int: SessionManager]() // Int: taskId
     private lazy var afterWorkers = [String: AfterWorker]() // String: ArRequestEvent name
     
-    private var responseQueue = DispatchQueue(label: "Alamo_Client_Response_Queue")
-    private var afterQueue = DispatchQueue(label: "Alamo_Client_After_Queue")
+    private var responseQueue = DispatchQueue(label: "com.armin.response.thread")
+    private var afterQueue = DispatchQueue(label: "com.armin.after.thread")
     
     public weak var delegate: ArminDelegate?
     public weak var logTube: ArLogTube?
@@ -450,26 +450,26 @@ private extension Armin {
 // MARK: CallbArk
 private extension Armin {
     func requestSuccess(of event: ArRequestEvent, startTime: TimeInterval, with url: String) {
-        self.delegate?.alamo(self, requestSuccess: event, startTime: startTime, url: url)
+        self.delegate?.armin(self, requestSuccess: event, startTime: startTime, url: url)
     }
     
     func request(error: ArError, of event: ArRequestEvent, with url: String) {
-        self.delegate?.alamo(self, requestFail: error, event: event, url: url)
+        self.delegate?.armin(self, requestFail: error, event: event, url: url)
     }
 }
 
 // MARK: Log
 private extension Armin {
     func log(info: String, extra: String? = nil) {
-        logTube?.log(info: info, extral: extra)
+        logTube?.log(info: info, extra: extra)
     }
     
     func log(warning: String, extra: String? = nil) {
-        logTube?.log(warning: warning, extral: extra)
+        logTube?.log(warning: warning, extra: extra)
     }
     
     func log(error: Error, extra: String? = nil) {
-        logTube?.log(error: error, extral: extra)
+        logTube?.log(error: error, extra: extra)
     }
 }
 

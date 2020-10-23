@@ -5,9 +5,22 @@
 //  Created by CavanSu on 2020/8/18.
 //
 
+@objc public protocol ArminDelegateOC: NSObjectProtocol {
+    func armin(_ client: ArminOC, requestSuccess event: ArRequestEventOC, startTime: TimeInterval, url: String)
+    func armin(_ client: ArminOC, requestFail error: ArErrorOC, event: ArRequestEventOC, url: String)
+}
+
+@objc public class ArErrorOC: NSError {
+    
+}
+
 @objc public class ArminOC: Armin {
-    @objc public init() {
-        super.init(delegate: nil, logTube: nil)
+    @objc public weak var delegateOC: ArminDelegateOC?
+    
+    @objc public init(delegate: ArminDelegateOC? = nil, logTube: ArLogTube? = nil) {
+        self.delegateOC = delegate
+        super.init(delegate: nil, logTube: logTube)
+        self.delegate = self
     }
     
     @objc public func request(task: ArRequestTaskOC,
@@ -63,6 +76,19 @@
                         return .resign
                     }
         }
+    }
+}
+
+extension ArminOC: ArminDelegate {
+    public func armin(_ client: Armin, requestSuccess event: ArRequestEvent, startTime: TimeInterval, url: String) {
+        let eventOC = ArRequestEventOC(name: event.name)
+        self.delegateOC?.armin(self, requestSuccess: eventOC, startTime: startTime, url: url)
+    }
+    
+    public func armin(_ client: Armin, requestFail error: ArError, event: ArRequestEvent, url: String) {
+        let eventOC = ArRequestEventOC(name: event.name)
+        let errorOC = ArErrorOC(domain: error.localizedDescription + (error.extra ?? ""), code: (error.code ?? 0), userInfo: nil)
+        self.delegateOC?.armin(self, requestFail: errorOC, event: eventOC, url: url)
     }
 }
 
