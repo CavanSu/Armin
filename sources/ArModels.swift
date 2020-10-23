@@ -149,9 +149,10 @@ public struct ArUploadObject: CustomStringConvertible {
 }
 
 public struct ArRequestTask: ArRequestTaskProtocol {
-    public var id: Int
+    public private(set) var id: Int
+    public private(set) var requestType: ArRequestType
+    
     public var event: ArRequestEvent
-    public var requestType: ArRequestType
     public var timeout: ArRequestTimeout
     public var header: [String : String]?
     public var parameters: [String : Any]?
@@ -180,27 +181,23 @@ public struct ArUploadTask: ArUploadTaskProtocol, CustomStringConvertible {
         return cusDescription()
     }
     
-    public var id: Int
+    public private(set) var id: Int
+    public private(set) var requestType: ArRequestType
+    
     public var event: ArRequestEvent
     public var timeout: ArRequestTimeout
-    public var url: String
     public var header: [String: String]?
     public var parameters: [String: Any]?
-    
     public var object: ArUploadObject
-    public var requestType: ArRequestType
     
     public init(event: ArRequestEvent,
                 timeout: ArRequestTimeout = .medium,
                 object: ArUploadObject,
                 url: String,
-                fileData: Data,
-                fileName: String,
                 header: [String: String]? = nil,
                 parameters: [String: Any]? = nil) {
         TaskId.value += 1
         self.id = TaskId.value
-        self.url = url
         self.object = object
         self.requestType = .http(.post, url: url)
         self.event = event
@@ -256,6 +253,10 @@ fileprivate extension Date {
     case json, data, blank
 }
 
+@objc public enum ArFileMIMEOC: Int {
+    case png, zip
+}
+
 @objc public class ArRequestTypeObjectOC: NSObject {
     @objc public var type: ArRequestTypeOC
     
@@ -275,23 +276,6 @@ fileprivate extension Date {
         super.init(type: .http)
     }
 }
-
-//@objc public class ArRequestTypeObjectOC: NSObject {
-//    @objc public var type: ArRequestTypeOC
-//    @objc public var method: ArHTTPMethodOC
-//    @objc public var url: String
-//    @objc public var peer: String
-//
-//    @objc public init(type: ArRequestTypeOC,
-//                      method: ArHTTPMethodOC,
-//                      url: String,
-//                      peer: String) {
-//        self.type = type
-//        self.method = method
-//        self.url = url
-//        self.peer = peer
-//    }
-//}
 
 @objc public class ArRequestTypeSocketObjectOC: ArRequestTypeObjectOC {
     @objc public var peer: String
@@ -334,5 +318,49 @@ fileprivate extension Date {
         self.type = type
         self.json = json
         self.data = data
+    }
+}
+
+@objc public class ArUploadObjectOC: NSObject {
+    @objc public var fileKeyOnServer: String
+    @objc public var fileName: String
+    @objc public var fileData: Data
+    @objc public var mime: ArFileMIMEOC
+    
+    @objc public init(fileKeyOnServer: String, fileName: String, fileData: Data, mime: ArFileMIMEOC) {
+        self.fileKeyOnServer = fileKeyOnServer
+        self.fileName = fileName
+        self.fileData = fileData
+        self.mime = mime
+    }
+}
+
+@objc public class ArUploadTaskOC: NSObject {
+    @objc public private(set) var id: Int
+    @objc public var event: ArRequestEventOC
+    @objc public var timeout: TimeInterval
+    @objc public var url: String
+    @objc public var header: [String : String]?
+    @objc public var parameters: [String : Any]?
+    @objc public var object: ArUploadObjectOC
+    
+    public private(set) var requestType: ArRequestType
+    
+    @objc public init(event: ArRequestEventOC,
+                      timeout: TimeInterval,
+                      object: ArUploadObjectOC,
+                      url: String,
+                      header: [String: String]? = nil,
+                      parameters: [String: Any]? = nil) {
+        TaskId.value += 1
+        self.id = TaskId.value
+        self.url = url
+        self.object = object
+        self.requestType = .http(.post, url: url)
+        self.event = event
+        
+        self.timeout = timeout
+        self.header = header
+        self.parameters = parameters
     }
 }

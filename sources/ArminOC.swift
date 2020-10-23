@@ -77,6 +77,62 @@
                     }
         }
     }
+    
+    @objc public func upload(task: ArUploadTaskOC,
+                             responseOnMainQueue: Bool = true,
+                             successCallbackContent: ArResponseTypeOC,
+                             success: ((ArResponseOC) -> Void)? = nil,
+                             failRetryInterval: TimeInterval = -1,
+                             fail: ArErrorCompletion = nil) {
+        
+        
+        var response: ArResponse
+        
+        switch successCallbackContent {
+        case .json:
+            response = ArResponse.json({ (json) in
+                let response_oc = ArResponseOC(type: successCallbackContent,
+                                               json: json,
+                                               data: nil)
+                
+                if let success = success {
+                    success(response_oc)
+                }
+            })
+        case .data:
+            response = ArResponse.data({ (data) in
+                let response_oc = ArResponseOC(type: successCallbackContent,
+                                               json: nil,
+                                               data: data)
+                
+                if let success = success {
+                    success(response_oc)
+                }
+            })
+        case .blank:
+            response = ArResponse.blank({
+                let response_oc = ArResponseOC(type: successCallbackContent,
+                                               json: nil,
+                                               data: nil)
+                
+                if let success = success {
+                    success(response_oc)
+                }
+            })
+        }
+        
+        let swift_task = ArUploadTask.oc(task)
+        
+        upload(task: swift_task,
+               responseOnMainQueue: responseOnMainQueue,
+               success: response) { (error) -> ArRetryOptions in
+                if failRetryInterval > 0 {
+                    return .retry(after: failRetryInterval)
+                } else {
+                    return .resign
+                }
+        }
+    }
 }
 
 extension ArminOC: ArminDelegate {
@@ -137,5 +193,34 @@ fileprivate extension ArHttpMethod {
         case .put:     return .put
         case .trace:   return .trace
         }
+    }
+}
+
+fileprivate extension ArFileMIME {
+    static func oc(_ item: ArFileMIMEOC) -> ArFileMIME {
+        switch item {
+        case .png: return .png
+        case .zip: return .zip
+        }
+    }
+}
+
+fileprivate extension ArUploadTask {
+    static func oc(_ item: ArUploadTaskOC) -> ArUploadTask {
+        let siwft_mime = ArFileMIME.oc(item.object.mime)
+        let swift_object = ArUploadObject(fileKeyOnServer: item.object.fileKeyOnServer,
+                                          fileName: item.object.fileName,
+                                          fileData: item.object.fileData,
+                                          mime: siwft_mime)
+        
+        let swift_event = ArRequestEvent(name: item.event.name)
+        
+        let swift_task = ArUploadTask(event: swift_event,
+                                      timeout: .custom(item.timeout),
+                                      object: swift_object,
+                                      url: item.url,
+                                      header: item.header,
+                                      parameters: item.header)
+        return swift_task
     }
 }

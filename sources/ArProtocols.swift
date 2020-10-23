@@ -19,9 +19,9 @@ public protocol ArRequestEventProtocol: CustomStringConvertible {
 }
 
 public protocol ArRequestTaskProtocol {
-    var id: Int {get set}
+    var id: Int {get}
+    var requestType: ArRequestType {get}
     var event: ArRequestEvent {get set}
-    var requestType: ArRequestType {get set}
     var timeout: ArRequestTimeout {get set}
     var header: [String: String]? {get set}
     var parameters: [String: Any]? {get set}

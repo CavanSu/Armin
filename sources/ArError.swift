@@ -16,13 +16,24 @@ public struct ArError: Error {
     }
     
     public var localizedDescription: String {
+        var description: String
         switch type {
-        case .fail(let reason):             return "\(reason)"
-        case .invalidParameter(let para):   return "\(para)"
-        case .valueNil(let para):           return "\(para) nil"
-        case .convert(let a, let b):        return "\(a) converted to \(b) error"
-        case .unknown:                      return "unknown error"
+        case .fail(let reason):             description = "\(reason)"
+        case .invalidParameter(let para):   description = "\(para)"
+        case .valueNil(let para):           description = "\(para) nil"
+        case .convert(let a, let b):        description = "\(a) converted to \(b) error"
+        case .unknown:                      description = "unknown error"
         }
+        
+        if let code = code {
+            description += ", code: \(code)"
+        }
+        
+        if let extra = extra {
+            description += ", extra: \(extra)"
+        }
+        
+        return description
     }
     
     public var type: ErrorType

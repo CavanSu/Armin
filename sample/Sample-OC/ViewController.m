@@ -72,6 +72,31 @@
     }];
 }
 
+- (void)uploadTask {
+    NSString *url = @"";
+    ArRequestEventOC *event = [[ArRequestEventOC alloc] initWithName:@"Sample-Upload"];
+    ArUploadObjectOC *object = [[ArUploadObjectOC alloc] initWithFileKeyOnServer:@"server-input"
+                                                                        fileName:@"test"
+                                                                        fileData:[[NSData alloc] init]
+                                                                            mime:ArFileMIMEOCPng];
+    
+    ArUploadTaskOC *task = [[ArUploadTaskOC alloc] initWithEvent:event
+                                                         timeout:10
+                                                          object:object
+                                                             url:url
+                                                          header:nil
+                                                      parameters:nil];
+    
+    [self.client uploadWithTask:task
+            responseOnMainQueue:YES
+         successCallbackContent:ArResponseTypeOCBlank
+                        success:^(ArResponseOC * _Nonnull response) {
+        NSLog(@"upload success");
+    } failRetryInterval:-1 fail:^(NSError * _Nonnull error) {
+        NSLog(@"error: %@", error.localizedDescription);
+    }];
+}
+
 #pragma mark - ArminDelegateOC, ArLogTube
 - (void)armin:(ArminOC *)client requestSuccess:(ArRequestEventOC *)event startTime:(NSTimeInterval)startTime url:(NSString *)url {
     NSLog(@"event: %@, requestSuccess, url: %@", event.name, url);
