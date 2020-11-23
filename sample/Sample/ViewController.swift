@@ -10,8 +10,8 @@ import UIKit
 import Armin
 
 class ViewController: UIViewController {
-
-    lazy var client = Armin(delegate: self, logTube: self)
+    lazy var client = Armin(delegate: self,
+                            logTube: self)
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -61,25 +61,32 @@ class ViewController: UIViewController {
 }
 
 extension ViewController: ArminDelegate {
-    func alamo(_ client: Armin, requestSuccess event: ArRequestEvent, startTime: TimeInterval, url: String) {
+    func armin(_ client: Armin,
+               requestSuccess event: ArRequestEvent,
+               startTime: TimeInterval, url: String) {
         print("request success, event: \(event.description), url: \(url)")
     }
     
-    func alamo(_ client: Armin, requestFail error: ArError, event: ArRequestEvent, url: String) {
+    func armin(_ client: Armin,
+               requestFail error: ArError,
+               event: ArRequestEvent, url: String) {
         print("request error, event: \(event.description), error: \(error.localizedDescription), url: \(url)")
     }
 }
 
 extension ViewController: ArLogTube {
-    func log(info: String, extral: String?) {
-        print("info: \(info), extra: \(extral ?? "nil")")
+    func log(info: String,
+             extra: String?) {
+        print("info: \(info), extra: \(extra ?? "nil")")
     }
     
-    func log(warning: String, extral: String?) {
-        print("warning: \(warning), extra: \(extral ?? "nil")")
+    func log(warning: String,
+             extra: String?) {
+        print("warning: \(warning), extra: \(extra ?? "nil")")
     }
     
-    func log(error: Error, extral: String?) {
-        print("error: \(error), extra: \(extral ?? "nil")")
+    func log(error: Error,
+             extra: String?) {
+        print("error: \(error), extra: \(extra ?? "nil")")
     }
 }

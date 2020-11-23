@@ -33,6 +33,13 @@ public protocol ArUploadTaskProtocol: ArRequestTaskProtocol {
 
 // MARK: - Request APIs
 public protocol ArRequestAPIsProtocol {
-    func request(task: ArRequestTaskProtocol, responseOnMainQueue: Bool, success: ArResponse?, failRetry: ArErrorRetryCompletion)
-    func upload(task: ArUploadTaskProtocol, responseOnMainQueue: Bool, success: ArResponse?, failRetry: ArErrorRetryCompletion)
+    func request(task: ArRequestTaskProtocol,
+                 responseOnMainQueue: Bool,
+                 success: ArResponse?,
+                 failRetry: ArErrorRetryCompletion)
+    
+    func upload(task: ArUploadTaskProtocol,
+                responseOnMainQueue: Bool,
+                success: ArResponse?,
+                failRetry: ArErrorRetryCompletion)
 }

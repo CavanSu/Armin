@@ -15,7 +15,9 @@ struct OptionsDescription {
 class AfterWorker {
     private var pendingRequestWorkItem: DispatchWorkItem?
     
-    func perform(after: TimeInterval, on queue: DispatchQueue, _ block: @escaping (() -> Void)) {
+    func perform(after: TimeInterval,
+                 on queue: DispatchQueue,
+                 _ block: @escaping (() -> Void)) {
         // Cancel the currently pending item
         pendingRequestWorkItem?.cancel()
         

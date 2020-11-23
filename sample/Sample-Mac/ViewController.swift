@@ -10,8 +10,8 @@ import Cocoa
 import Armin
 
 class ViewController: NSViewController {
-
-    lazy var client = Armin(delegate: self, logTube: self)
+    lazy var client = Armin(delegate: self,
+                            logTube: self)
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -26,14 +26,14 @@ class ViewController: NSViewController {
 
     func getRequest() {
         let url = "http://t.weather.sojson.com/api/weather/city"
-        let event = RequestEvent(name: "Sample-get")
-        let task = RequestTask(event: event,
+        let event = ArRequestEvent(name: "Sample-get")
+        let task = ArRequestTask(event: event,
                                type: .http(.get, url: url),
                                timeout: .low)
         
-        client.request(task: task, success: ACResponse.json({ (json) in
+        client.request(task: task, success: ArResponse.json({ (json) in
             print("weather json: \(json.description)")
-        })) { (error) -> RetryOptions in
+        })) { (error) -> ArRetryOptions in
             print("error: \(error.localizedDescription)")
             return .resign
         }
@@ -41,18 +41,18 @@ class ViewController: NSViewController {
     
     func postRequest() {
         let url = ""
-        let event = RequestEvent(name: "Sample-post")
+        let event = ArRequestEvent(name: "Sample-post")
         let parameters: [String: Any]? = nil
         let headers: [String: String]? = nil
-        let task = RequestTask(event: event,
+        let task = ArRequestTask(event: event,
                                type: .http(.post, url: url),
                                timeout: .low,
                                header: headers,
                                parameters: parameters)
         
-        client.request(task: task, success: ACResponse.json({ (json) in
+        client.request(task: task, success: ArResponse.json({ (json) in
             print("weather json: \(json.description)")
-        })) { (error) -> RetryOptions in
+        })) { (error) -> ArRetryOptions in
             print("error: \(error.localizedDescription)")
             return .resign
         }
@@ -60,25 +60,34 @@ class ViewController: NSViewController {
 }
 
 extension ViewController: ArminDelegate {
-    func alamo(_ client: Armin, requestSuccess event: ACRequestEvent, startTime: TimeInterval, url: String) {
+    func armin(_ client: Armin,
+               requestSuccess event: ArRequestEvent,
+               startTime: TimeInterval,
+               url: String) {
         print("request success, event: \(event.description), url: \(url)")
     }
     
-    func alamo(_ client: Armin, requestFail error: ACError, event: ACRequestEvent, url: String) {
+    func armin(_ client: Armin,
+               requestFail error: ArError,
+               event: ArRequestEvent,
+               url: String) {
         print("request error, event: \(event.description), error: \(error.localizedDescription), url: \(url)")
     }
 }
 
-extension ViewController: ACLogTube {
-    func log(from: AnyClass, info: String, extral: String?, funcName: String) {
-        print("info: \(info), extra: \(extral ?? "nil"), funcName: \(funcName)")
+extension ViewController: ArLogTube {
+    func log(info: String,
+             extra: String?) {
+        print("info: \(info), extra: \(extra ?? "nil")")
     }
     
-    func log(from: AnyClass, warning: String, extral: String?, funcName: String) {
-        print("warning: \(warning), extra: \(extral ?? "nil"), funcName: \(funcName)")
+    func log(warning: String,
+             extra: String?) {
+        print("warning: \(warning), extra: \(extra ?? "nil")")
     }
     
-    func log(from: AnyClass, error: Error, extral: String?, funcName: String) {
-        print("error: \(error), extra: \(extral ?? "nil"), funcName: \(funcName)")
+    func log(error: Error,
+             extra: String?) {
+        print("error: \(error), extra: \(extra ?? "nil")")
     }
 }

@@ -22,6 +22,8 @@ public typealias ArErrorCompletion = ((Error) -> Void)?
 public typealias ArErrorBoolCompletion = ((Error) -> Bool)?
 public typealias ArErrorRetryCompletion = ((Error) -> ArRetryOptions)?
 
+public typealias ArErrorRetryCompletionOC = ((ArErrorOC) -> ArRetryOptionsOC)?
+
 // MARK: enum
 public enum ArRetryOptions {
     case retry(after: TimeInterval, newTask: ArRequestTaskProtocol? = nil), resign
@@ -233,6 +235,10 @@ fileprivate extension Date {
     }
 }
 
+@objc public enum ArRetryOptionsOC: Int {
+    case retry, resign
+}
+
 @objc public enum ArRequestTypeOC: Int {
     case http, socket
 }
@@ -314,7 +320,9 @@ fileprivate extension Date {
     @objc public var json: [String: Any]?
     @objc public var data: Data?
     
-    @objc public init(type: ArResponseTypeOC, json: [String: Any]?, data: Data?) {
+    @objc public init(type: ArResponseTypeOC,
+                      json: [String: Any]?,
+                      data: Data?) {
         self.type = type
         self.json = json
         self.data = data
@@ -327,7 +335,10 @@ fileprivate extension Date {
     @objc public var fileData: Data
     @objc public var mime: ArFileMIMEOC
     
-    @objc public init(fileKeyOnServer: String, fileName: String, fileData: Data, mime: ArFileMIMEOC) {
+    @objc public init(fileKeyOnServer: String,
+                      fileName: String,
+                      fileData: Data,
+                      mime: ArFileMIMEOC) {
         self.fileKeyOnServer = fileKeyOnServer
         self.fileName = fileName
         self.fileData = fileData

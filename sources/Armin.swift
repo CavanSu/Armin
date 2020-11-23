@@ -9,8 +9,14 @@
 import Alamofire
 
 public protocol ArminDelegate: NSObjectProtocol {
-    func armin(_ client: Armin, requestSuccess event: ArRequestEvent, startTime: TimeInterval, url: String)
-    func armin(_ client: Armin, requestFail error: ArError, event: ArRequestEvent, url: String)
+    func armin(_ client: Armin,
+               requestSuccess event: ArRequestEvent,
+               startTime: TimeInterval,
+               url: String)
+    func armin(_ client: Armin,
+               requestFail error: ArError,
+               event: ArRequestEvent,
+               url: String)
 }
 
 public class Armin: NSObject, ArRequestAPIsProtocol {
@@ -43,8 +49,13 @@ public extension Armin {
 }
 
 public extension Armin {
-    func request(task: ArRequestTaskProtocol, responseOnMainQueue: Bool = true, success: ArResponse? = nil, failRetry: ArErrorRetryCompletion = nil) {
-        privateRequst(task: task, responseOnMainQueue: responseOnMainQueue, success: success) { [unowned self] (error) in
+    func request(task: ArRequestTaskProtocol,
+                 responseOnMainQueue: Bool = true,
+                 success: ArResponse? = nil,
+                 failRetry: ArErrorRetryCompletion = nil) {
+        privateRequst(task: task,
+                      responseOnMainQueue: responseOnMainQueue,
+                      success: success) { [unowned self] (error) in
             guard let eRetry = failRetry else {
                 self.removeWorker(of: task.event)
                 return
@@ -62,17 +73,24 @@ public extension Armin {
                 }
                 
                 let work = self.worker(of: reTask.event)
-                work.perform(after: time, on: self.afterQueue, {
-                    self.request(task: reTask, success: success, failRetry: failRetry)
-                })
+                work.perform(after: time,
+                             on: self.afterQueue, {
+                                self.request(task: reTask,
+                                             success: success,
+                                             failRetry: failRetry)
+                             })
             case .resign:
                 break
             }
         }
     }
     
-    func upload(task: ArUploadTaskProtocol, responseOnMainQueue: Bool = true, success: ArResponse? = nil, failRetry: ArErrorRetryCompletion = nil) {
-        privateUpload(task: task, success: success) { [unowned self] (error) in
+    func upload(task: ArUploadTaskProtocol,
+                responseOnMainQueue: Bool = true,
+                success: ArResponse? = nil,
+                failRetry: ArErrorRetryCompletion = nil) {
+        privateUpload(task: task,
+                      success: success) { [unowned self] (error) in
             guard let eRetry = failRetry else {
                 self.removeWorker(of: task.event)
                 return
@@ -114,7 +132,10 @@ extension HTTPMethod {
 }
 
 private extension Armin {
-    func privateRequst(task: ArRequestTaskProtocol, responseOnMainQueue: Bool = true, success: ArResponse?, requestFail: ArErrorCompletion) {
+    func privateRequst(task: ArRequestTaskProtocol,
+                       responseOnMainQueue: Bool = true,
+                       success: ArResponse?,
+                       requestFail: ArErrorCompletion) {
         guard let httpMethod = task.requestType.httpMethod else {
             fatalError("Request Type error")
         }
@@ -126,13 +147,15 @@ private extension Armin {
         let timeout = task.timeout.value
         let taskId = task.id
         let startTime = Date.timeIntervalSinceReferenceDate
-        let instance = alamo(timeout, id: taskId)
+        let instance = alamo(timeout,
+                             id: taskId)
         
         var dataRequest: DataRequest
         
         if httpMethod == .get {
             if let parameters = task.parameters {
-                url = urlAddParameters(url: url, parameters: parameters)
+                url = urlAddParameters(url: url,
+                                       parameters: parameters)
             }
             dataRequest = instance.request(url,
                                            method: httpMethod,
@@ -168,7 +191,10 @@ private extension Armin {
         }
     }
     
-    func privateUpload(task: ArUploadTaskProtocol, responseOnMainQueue: Bool = true, success: ArResponse?, requestFail: ArErrorCompletion) {
+    func privateUpload(task: ArUploadTaskProtocol,
+                       responseOnMainQueue: Bool = true,
+                       success: ArResponse?,
+                       requestFail: ArErrorCompletion) {
         guard let _ = task.requestType.httpMethod else {
             fatalError("Request Type error")
         }
@@ -204,7 +230,7 @@ private extension Armin {
             
             for (key, value) in parameters {
                 if let stringValue = value as? String,
-                    let part = stringValue.data(using: String.Encoding.utf8) {
+                   let part = stringValue.data(using: String.Encoding.utf8) {
                     multiData.append(part, withName: key)
                 } else if var intValue = value as? Int {
                     let part = Data(bytes: &intValue, count: MemoryLayout<Int>.size)
@@ -214,7 +240,8 @@ private extension Armin {
         }, to: url, headers: task.header) { (encodingResult) in
             switch encodingResult {
             case .success(let upload, _, _):
-                upload.uploadProgress(queue: DispatchQueue.main, closure: { (progress) in
+                upload.uploadProgress(queue: DispatchQueue.main,
+                                      closure: { (progress) in
                 })
                 
                 upload.responseData(queue: queue) { [unowned self] (dataResponse) in
@@ -238,11 +265,19 @@ private extension Armin {
         }
     }
     
-    func handle(dataResponse: DataResponse<Data>, from task: ArRequestTaskProtocol, url: String, startTime: TimeInterval, success: ArResponse?, fail: ArErrorCompletion) {
-        let result = self.checkResponseData(dataResponse, event: task.event)
+    func handle(dataResponse: DataResponse<Data>,
+                from task: ArRequestTaskProtocol,
+                url: String,
+                startTime: TimeInterval,
+                success: ArResponse?,
+                fail: ArErrorCompletion) {
+        let result = self.checkResponseData(dataResponse,
+                                            event: task.event)
         switch result {
         case .pass(let data):
-            self.requestSuccess(of: task.event, startTime: startTime, with: url)
+            self.requestSuccess(of: task.event,
+                                startTime: startTime,
+                                with: url)
             guard let success = success else {
                 break
             }
@@ -250,20 +285,23 @@ private extension Armin {
             do {
                 switch success {
                 case .blank(let completion):
-                    self.log(info: "request success", extra: "event: \(task.event)")
+                    self.log(info: "request success",
+                             extra: "event: \(task.event)")
                     guard let completion = completion else {
                         break
                     }
                     completion()
                 case .data(let completion):
-                    self.log(info: "request success", extra: "event: \(task.event), data.count: \(data.count)")
+                    self.log(info: "request success",
+                             extra: "event: \(task.event), data.count: \(data.count)")
                     guard let completion = completion else {
                         break
                     }
                     try completion(data)
                 case .json(let completion):
                     let json = try data.json()
-                    self.log(info: "request success", extra: "event: \(task.event), json: \(json.description)")
+                    self.log(info: "request success",
+                             extra: "event: \(task.event), json: \(json.description)")
                     guard let completion = completion else {
                         break
                     }
@@ -274,11 +312,14 @@ private extension Armin {
                 if let fail = fail {
                     fail(error)
                 }
-                self.log(error: error, extra: "event: \(task.event)")
+                self.log(error: error,
+                         extra: "event: \(task.event)")
             }
         case .fail(let error):
-            self.request(error: error, of: task.event, with: url)
-            self.log(error: error, extra: "event: \(task.event), url: \(url)")
+            self.request(error: error,
+                         of: task.event, with: url)
+            self.log(error: error,
+                     extra: "event: \(task.event), url: \(url)")
             if let fail = fail {
                 fail(error)
             }
@@ -288,7 +329,8 @@ private extension Armin {
 
 // MARK: Alamo instance
 private extension Armin {
-    func alamo(_ timeout: TimeInterval, id: Int) -> SessionManager {
+    func alamo(_ timeout: TimeInterval,
+               id: Int) -> SessionManager {
         let configuration = URLSessionConfiguration.default
         configuration.httpAdditionalHeaders = SessionManager.defaultHTTPHeaders
         configuration.timeoutIntervalForRequest = timeout
@@ -301,11 +343,12 @@ private extension Armin {
     func removeInstance(_ id: Int) {
         instances.removeValue(forKey: id)
     }
-        
-    func urlAddParameters(url: String, parameters: [String: Any]) -> String {
+    
+    func urlAddParameters(url: String,
+                          parameters: [String: Any]) -> String {
         var fullURL = url
         var index: Int = 0
-
+        
         for (key, value) in parameters {
             if index == 0 {
                 fullURL += "?"
@@ -371,7 +414,8 @@ private extension Armin {
         case pass(Data), fail(ArError)
     }
     
-    func checkResponseData(_ dataResponse: DataResponse<Data>, event: ArRequestEvent) -> CheckDataResult {
+    func checkResponseData(_ dataResponse: DataResponse<Data>,
+                           event: ArRequestEvent) -> CheckDataResult {
         var dataResult: CheckDataResult = .fail(ArError.unknown())
         var result: CheckResult = .fail(ArError.unknown())
         let code = dataResponse.response?.statusCode
@@ -386,7 +430,7 @@ private extension Armin {
                     dataResult = .pass(data)
                 } else {
                     let error =  ArError.fail("response data nil",
-                                               extra: "return data nil, event: \(event.description)")
+                                              extra: "return data nil, event: \(event.description)")
                     dataResult = .fail(error)
                 }
             default: break
@@ -407,7 +451,8 @@ private extension Armin {
         return dataResult
     }
     
-    func checkResponseCode(_ code: Int?, event: ArRequestEvent) -> CheckResult {
+    func checkResponseCode(_ code: Int?,
+                           event: ArRequestEvent) -> CheckResult {
         var result: CheckResult = .pass
         
         if let code = code {
@@ -418,29 +463,30 @@ private extension Armin {
                 result = .pass
             case .error(let code):
                 let error = ArError.fail("response code error",
-                                          code: code,
-                                          extra: "event: \(event.description)")
+                                         code: code,
+                                         extra: "event: \(event.description)")
                 result = .fail(error)
             }
         } else {
             let error = ArError.fail("connect with server error, response code nil",
-                                      extra: "event: \(event.description)")
+                                     extra: "event: \(event.description)")
             result = .fail(error)
         }
         return result
     }
     
-    func checkResponseContent(_ error: Error?, event: ArRequestEvent) -> CheckResult {
+    func checkResponseContent(_ error: Error?,
+                              event: ArRequestEvent) -> CheckResult {
         var result: CheckResult = .pass
         
         if let error = error as? AFError {
             let mError = ArError.fail(error.localizedDescription,
-                                       code: error.responseCode,
-                                       extra: "event: \(event.description)")
+                                      code: error.responseCode,
+                                      extra: "event: \(event.description)")
             result = .fail(mError)
         } else if let error = error {
             let mError = ArError.fail(error.localizedDescription,
-                                       extra: "event: \(event.description)")
+                                      extra: "event: \(event.description)")
             result = .fail(mError)
         }
         return result
@@ -449,11 +495,15 @@ private extension Armin {
 
 // MARK: CallbArk
 private extension Armin {
-    func requestSuccess(of event: ArRequestEvent, startTime: TimeInterval, with url: String) {
+    func requestSuccess(of event: ArRequestEvent,
+                        startTime: TimeInterval,
+                        with url: String) {
         self.delegate?.armin(self, requestSuccess: event, startTime: startTime, url: url)
     }
     
-    func request(error: ArError, of event: ArRequestEvent, with url: String) {
+    func request(error: ArError,
+                 of event: ArRequestEvent,
+                 with url: String) {
         self.delegate?.armin(self, requestFail: error, event: event, url: url)
     }
 }

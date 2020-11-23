@@ -40,19 +40,32 @@ public struct ArError: Error {
     public var code: Int?
     public var extra: String?
     
-    public static func fail(_ text: String, code: Int? = nil, extra: String? = nil) -> ArError {
-        return ArError(type: .fail(text), code: code, extra: extra)
+    public static func fail(_ text: String,
+                            code: Int? = nil,
+                            extra: String? = nil) -> ArError {
+        return ArError(type: .fail(text),
+                       code: code,
+                       extra: extra)
     }
     
-    public static func invalidParameter(_ text: String, code: Int? = nil, extra: String? = nil) -> ArError {
-        return ArError(type: .invalidParameter(text), code: code, extra: extra)
+    public static func invalidParameter(_ text: String,
+                                        code: Int? = nil,
+                                        extra: String? = nil) -> ArError {
+        return ArError(type: .invalidParameter(text),
+                       code: code,
+                       extra: extra)
     }
     
-    public static func valueNil(_ text: String, code: Int? = nil, extra: String? = nil) -> ArError {
-        return ArError(type: .valueNil(text), code: code, extra: extra)
+    public static func valueNil(_ text: String,
+                                code: Int? = nil,
+                                extra: String? = nil) -> ArError {
+        return ArError(type: .valueNil(text),
+                       code: code,
+                       extra: extra)
     }
     
-    public static func convert(_ from: String, _ to: String) -> ArError {
+    public static func convert(_ from: String,
+                               _ to: String) -> ArError {
         return ArError(type: .convert(from, to))
     }
     

@@ -1,13 +1,20 @@
 //
 //  Armin_OC.swift
-//  Pods
+//  Armin
 //
 //  Created by CavanSu on 2020/8/18.
+//  Copyright © 2020 CavanSu. All rights reserved.
 //
 
 @objc public protocol ArminDelegateOC: NSObjectProtocol {
-    func armin(_ client: ArminOC, requestSuccess event: ArRequestEventOC, startTime: TimeInterval, url: String)
-    func armin(_ client: ArminOC, requestFail error: ArErrorOC, event: ArRequestEventOC, url: String)
+    func armin(_ client: ArminOC,
+               requestSuccess event: ArRequestEventOC,
+               startTime: TimeInterval,
+               url: String)
+    func armin(_ client: ArminOC,
+               requestFail error: ArErrorOC,
+               event: ArRequestEventOC,
+               url: String)
 }
 
 @objc public class ArErrorOC: NSError {
@@ -17,9 +24,11 @@
 @objc public class ArminOC: Armin {
     @objc public weak var delegateOC: ArminDelegateOC?
     
-    @objc public init(delegate: ArminDelegateOC? = nil, logTube: ArLogTube? = nil) {
+    @objc public init(delegate: ArminDelegateOC? = nil,
+                      logTube: ArLogTube? = nil) {
         self.delegateOC = delegate
-        super.init(delegate: nil, logTube: logTube)
+        super.init(delegate: nil,
+                   logTube: logTube)
         self.delegate = self
     }
     
@@ -28,8 +37,7 @@
                               successCallbackContent: ArResponseTypeOC,
                               success: ((ArResponseOC) -> Void)? = nil,
                               failRetryInterval: TimeInterval = -1,
-                              fail: ArErrorCompletion = nil) {
-        
+                              fail: ArErrorRetryCompletionOC = nil) {
         let swift_task = ArRequestTask.oc(task)
         
         var response: ArResponse
@@ -70,11 +78,23 @@
         request(task: swift_task,
                 responseOnMainQueue: responseOnMainQueue,
                 success: response) { (error) -> ArRetryOptions in
-                    if failRetryInterval > 0 {
-                        return .retry(after: failRetryInterval)
-                    } else {
-                        return .resign
-                    }
+            if failRetryInterval > 0,
+               let fail = fail {
+                let swift_error = error as! ArError
+                let oc_error = ArErrorOC(domain: swift_error.localizedDescription,
+                                         code: -1,
+                                         userInfo: nil)
+                let option = fail(oc_error);
+                
+                switch option {
+                case .retry:
+                    return .retry(after: failRetryInterval)
+                case .resign:
+                    return .resign
+                }
+            } else {
+                return .resign
+            }
         }
     }
     
@@ -84,8 +104,6 @@
                              success: ((ArResponseOC) -> Void)? = nil,
                              failRetryInterval: TimeInterval = -1,
                              fail: ArErrorCompletion = nil) {
-        
-        
         var response: ArResponse
         
         switch successCallbackContent {
@@ -136,15 +154,29 @@
 }
 
 extension ArminOC: ArminDelegate {
-    public func armin(_ client: Armin, requestSuccess event: ArRequestEvent, startTime: TimeInterval, url: String) {
+    public func armin(_ client: Armin,
+                      requestSuccess event: ArRequestEvent,
+                      startTime: TimeInterval,
+                      url: String) {
         let eventOC = ArRequestEventOC(name: event.name)
-        self.delegateOC?.armin(self, requestSuccess: eventOC, startTime: startTime, url: url)
+        self.delegateOC?.armin(self,
+                               requestSuccess: eventOC,
+                               startTime: startTime,
+                               url: url)
     }
     
-    public func armin(_ client: Armin, requestFail error: ArError, event: ArRequestEvent, url: String) {
+    public func armin(_ client: Armin,
+                      requestFail error: ArError,
+                      event: ArRequestEvent,
+                      url: String) {
         let eventOC = ArRequestEventOC(name: event.name)
-        let errorOC = ArErrorOC(domain: error.localizedDescription + (error.extra ?? ""), code: (error.code ?? 0), userInfo: nil)
-        self.delegateOC?.armin(self, requestFail: errorOC, event: eventOC, url: url)
+        let errorOC = ArErrorOC(domain: error.localizedDescription + (error.extra ?? ""),
+                                code: (error.code ?? 0),
+                                userInfo: nil)
+        self.delegateOC?.armin(self,
+                               requestFail: errorOC,
+                               event: eventOC,
+                               url: url)
     }
 }
 
@@ -166,7 +198,8 @@ fileprivate extension ArRequestType {
         switch item.type {
         case .http:
             if let http = item as? ArRequestTypeJsonObjectOC {
-                return ArRequestType.http(ArHttpMethod.oc(http.method), url: http.url)
+                return ArRequestType.http(ArHttpMethod.oc(http.method),
+                                          url: http.url)
             } else {
                 fatalError("ArRequestType error")
             }

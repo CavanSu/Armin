@@ -14,7 +14,6 @@
 @end
 
 @implementation ViewController
-
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.client = [[ArminOC alloc] initWithDelegate:self
@@ -45,8 +44,9 @@
           successCallbackContent:ArResponseTypeOCJson
                          success:^(ArResponseOC * _Nonnull response) {
         NSLog(@"weather json: %@", response.json);
-    } failRetryInterval:-1 fail:^(NSError * _Nonnull error) {
+    } failRetryInterval:1 fail:^enum ArRetryOptionsOC(ArErrorOC * _Nonnull error) {
         NSLog(@"error: %@", error.localizedDescription);
+        return ArRetryOptionsOCResign;
     }];
 }
 
@@ -67,8 +67,9 @@
           successCallbackContent:ArResponseTypeOCJson
                          success:^(ArResponseOC * _Nonnull response) {
         NSLog(@"weather json: %@", response.json);
-    } failRetryInterval:-1 fail:^(NSError * _Nonnull error) {
+    } failRetryInterval:-1 fail:^enum ArRetryOptionsOC(ArErrorOC * _Nonnull error) {
         NSLog(@"error: %@", error.localizedDescription);
+        return ArRetryOptionsOCResign;
     }];
 }
 
@@ -98,24 +99,32 @@
 }
 
 #pragma mark - ArminDelegateOC, ArLogTube
-- (void)armin:(ArminOC *)client requestSuccess:(ArRequestEventOC *)event startTime:(NSTimeInterval)startTime url:(NSString *)url {
+- (void)armin:(ArminOC *)client
+requestSuccess:(ArRequestEventOC *)event
+    startTime:(NSTimeInterval)startTime
+          url:(NSString *)url {
     NSLog(@"event: %@, requestSuccess, url: %@", event.name, url);
 }
 
-- (void)armin:(ArminOC *)client requestFail:(ArErrorOC *)error event:(ArRequestEventOC *)event url:(NSString *)url {
+- (void)armin:(ArminOC *)client
+  requestFail:(ArErrorOC *)error
+        event:(ArRequestEventOC *)event
+          url:(NSString *)url {
     NSLog(@"event: %@, requestFail, url: %@", event.name, url);
 }
 
-- (void)logWithInfo:(NSString *)info extra:(NSString *)extra {
+- (void)logWithInfo:(NSString *)info
+              extra:(NSString *)extra {
     NSLog(@"log info: %@, extra: %@", info, extra);
 }
 
-- (void)logWithWarning:(NSString *)warning extra:(NSString *)extra {
+- (void)logWithWarning:(NSString *)warning
+                 extra:(NSString *)extra {
     NSLog(@"log warning: %@, extra: %@", warning, extra);
 }
 
-- (void)logWithError:(NSError *)error extra:(NSString *)extra {
+- (void)logWithError:(NSError *)error
+               extra:(NSString *)extra {
     NSLog(@"log error: %@, extra: %@", error, extra);
 }
-
 @end
