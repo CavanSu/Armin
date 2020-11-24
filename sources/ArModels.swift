@@ -22,7 +22,7 @@ public typealias ArErrorCompletion = ((Error) -> Void)?
 public typealias ArErrorBoolCompletion = ((Error) -> Bool)?
 public typealias ArErrorRetryCompletion = ((Error) -> ArRetryOptions)?
 
-public typealias ArErrorRetryCompletionOC = ((ArErrorOC) -> ArRetryOptionsOC)?
+public typealias ArErrorRetryCompletionOC = ((ArErrorOC) -> TimeInterval)?
 
 // MARK: enum
 public enum ArRetryOptions {
@@ -233,10 +233,6 @@ fileprivate extension Date {
     @objc public init(name: String) {
         self.name = name
     }
-}
-
-@objc public enum ArRetryOptionsOC: Int {
-    case retry, resign
 }
 
 @objc public enum ArRequestTypeOC: Int {

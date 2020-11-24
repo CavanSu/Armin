@@ -36,7 +36,6 @@
                               responseOnMainQueue: Bool = true,
                               successCallbackContent: ArResponseTypeOC,
                               success: ((ArResponseOC) -> Void)? = nil,
-                              failRetryInterval: TimeInterval = -1,
                               fail: ArErrorRetryCompletionOC = nil) {
         let swift_task = ArRequestTask.oc(task)
         
@@ -78,18 +77,16 @@
         request(task: swift_task,
                 responseOnMainQueue: responseOnMainQueue,
                 success: response) { (error) -> ArRetryOptions in
-            if failRetryInterval > 0,
-               let fail = fail {
+            if let fail = fail {
                 let swift_error = error as! ArError
                 let oc_error = ArErrorOC(domain: swift_error.localizedDescription,
                                          code: -1,
                                          userInfo: nil)
-                let option = fail(oc_error);
+                let failRetryInterval = fail(oc_error);
                 
-                switch option {
-                case .retry:
+                if failRetryInterval > 0 {
                     return .retry(after: failRetryInterval)
-                case .resign:
+                } else {
                     return .resign
                 }
             } else {

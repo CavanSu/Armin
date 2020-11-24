@@ -44,9 +44,9 @@
           successCallbackContent:ArResponseTypeOCJson
                          success:^(ArResponseOC * _Nonnull response) {
         NSLog(@"weather json: %@", response.json);
-    } failRetryInterval:1 fail:^enum ArRetryOptionsOC(ArErrorOC * _Nonnull error) {
+    } fail:^NSTimeInterval(ArErrorOC * _Nonnull error) {
         NSLog(@"error: %@", error.localizedDescription);
-        return ArRetryOptionsOCResign;
+        return 0;
     }];
 }
 
@@ -67,9 +67,9 @@
           successCallbackContent:ArResponseTypeOCJson
                          success:^(ArResponseOC * _Nonnull response) {
         NSLog(@"weather json: %@", response.json);
-    } failRetryInterval:-1 fail:^enum ArRetryOptionsOC(ArErrorOC * _Nonnull error) {
+    } fail:^NSTimeInterval(ArErrorOC * _Nonnull error) {
         NSLog(@"error: %@", error.localizedDescription);
-        return ArRetryOptionsOCResign;
+        return 0;
     }];
 }
 
