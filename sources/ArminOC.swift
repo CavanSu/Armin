@@ -23,13 +23,16 @@
 
 @objc public class ArminOC: Armin {
     @objc public weak var delegateOC: ArminDelegateOC?
+    @objc public weak var logTubeOC: ArLogTubeOC?
     
     @objc public init(delegate: ArminDelegateOC? = nil,
-                      logTube: ArLogTube? = nil) {
+                      logTube: ArLogTubeOC? = nil) {
         self.delegateOC = delegate
         super.init(delegate: nil,
-                   logTube: logTube)
+                   logTube: nil)
+        self.logTube = self
         self.delegate = self
+        self.logTubeOC = logTube
     }
     
     @objc public func request(task: ArRequestTaskOC,
@@ -99,8 +102,7 @@
                              responseOnMainQueue: Bool = true,
                              successCallbackContent: ArResponseTypeOC,
                              success: ((ArResponseOC) -> Void)? = nil,
-                             failRetryInterval: TimeInterval = -1,
-                             fail: ArErrorCompletion = nil) {
+                             fail: ArErrorRetryCompletionOC = nil) {
         var response: ArResponse
         
         switch successCallbackContent {
@@ -141,11 +143,21 @@
         upload(task: swift_task,
                responseOnMainQueue: responseOnMainQueue,
                success: response) { (error) -> ArRetryOptions in
+            if let fail = fail {
+                let swift_error = error as! ArError
+                let oc_error = ArErrorOC(domain: swift_error.localizedDescription,
+                                         code: -1,
+                                         userInfo: nil)
+                let failRetryInterval = fail(oc_error);
+                
                 if failRetryInterval > 0 {
                     return .retry(after: failRetryInterval)
                 } else {
                     return .resign
                 }
+            } else {
+                return .resign
+            }
         }
     }
 }
@@ -174,6 +186,30 @@ extension ArminOC: ArminDelegate {
                                requestFail: errorOC,
                                event: eventOC,
                                url: url)
+    }
+}
+
+extension ArminOC: ArLogTube {
+    public func log(info: String, extra: String?) {
+        logTubeOC?.log(info: info, extra: extra)
+    }
+    
+    public func log(warning: String, extra: String?) {
+        logTubeOC?.log(warning: warning, extra: extra)
+    }
+    
+    public func log(error: Error, extra: String?) {
+        if let arError = error as? ArError {
+            let oc_error = ArErrorOC(domain: arError.localizedDescription,
+                                     code: arError.code ?? -1,
+                                     userInfo: nil)
+            logTubeOC?.log(error: oc_error, extra: extra)
+        } else {
+            let oc_error = ArErrorOC(domain: error.localizedDescription,
+                                     code: -1,
+                                     userInfo: nil)
+            logTubeOC?.log(error: oc_error, extra: extra)
+        }
     }
 }
 

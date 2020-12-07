@@ -180,14 +180,14 @@ private extension Armin {
         }
         
         dataRequest.responseData(queue: queue) { [unowned self] (dataResponse) in
+            self.removeInstance(taskId)
+            self.removeWorker(of: task.event)
             self.handle(dataResponse: dataResponse,
                         from: task,
                         url: url,
                         startTime: startTime,
                         success: success,
                         fail: requestFail)
-            self.removeInstance(taskId)
-            self.removeWorker(of: task.event)
         }
     }
     
@@ -245,22 +245,23 @@ private extension Armin {
                 })
                 
                 upload.responseData(queue: queue) { [unowned self] (dataResponse) in
+                    self.removeInstance(taskId)
+                    self.removeWorker(of: task.event)
+                    
                     self.handle(dataResponse: dataResponse,
                                 from: task,
                                 url: url,
                                 startTime: startTime,
                                 success: success,
                                 fail: requestFail)
-                    self.removeInstance(taskId)
-                    self.removeWorker(of: task.event)
                 }
             case .failure(let error):
+                self.removeInstance(taskId)
                 let mError = ArError.fail(error.localizedDescription)
                 self.request(error: mError, of: task.event, with: url)
                 if let requestFail = requestFail {
                     requestFail(mError)
                 }
-                self.removeInstance(taskId)
             }
         }
     }
@@ -309,11 +310,11 @@ private extension Armin {
                     try completion(json)
                 }
             } catch {
+                self.log(error: error,
+                         extra: "event: \(task.event)")
                 if let fail = fail {
                     fail(error)
                 }
-                self.log(error: error,
-                         extra: "event: \(task.event)")
             }
         case .fail(let error):
             self.request(error: error,

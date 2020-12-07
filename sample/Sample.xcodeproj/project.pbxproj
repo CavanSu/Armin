@@ -532,7 +532,7 @@
 					"\"${PODS_CONFIGURATION_BUILD_DIR}/Armin-iOS/Armin.framework/Headers\"",
 				);
 				INFOPLIST_FILE = "Sample-OC/Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -561,7 +561,7 @@
 					"\"${PODS_CONFIGURATION_BUILD_DIR}/Armin-iOS/Armin.framework/Headers\"",
 				);
 				INFOPLIST_FILE = "Sample-OC/Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

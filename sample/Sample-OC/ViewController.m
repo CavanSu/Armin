@@ -9,7 +9,7 @@
 #import "ViewController.h"
 #import <Armin/Armin-Swift.h>
 
-@interface ViewController () <ArminDelegateOC, ArLogTube>
+@interface ViewController () <ArminDelegateOC, ArLogTubeOC>
 @property (nonatomic, strong) ArminOC *client;
 @end
 
@@ -93,8 +93,9 @@
          successCallbackContent:ArResponseTypeOCBlank
                         success:^(ArResponseOC * _Nonnull response) {
         NSLog(@"upload success");
-    } failRetryInterval:-1 fail:^(NSError * _Nonnull error) {
+    } fail:^NSTimeInterval(ArErrorOC * _Nonnull error) {
         NSLog(@"error: %@", error.localizedDescription);
+        return -1;
     }];
 }
 
