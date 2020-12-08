@@ -318,7 +318,8 @@ private extension Armin {
             }
         case .fail(let error):
             self.request(error: error,
-                         of: task.event, with: url)
+                         of: task.event,
+                         with: url)
             self.log(error: error,
                      extra: "event: \(task.event), url: \(url)")
             if let fail = fail {
@@ -420,18 +421,26 @@ private extension Armin {
         var dataResult: CheckDataResult = .fail(ArError.unknown())
         var result: CheckResult = .fail(ArError.unknown())
         let code = dataResponse.response?.statusCode
+        let data = dataResponse.data
         let checkIndexs = 3
         
         for index in 0 ..< checkIndexs {
             switch index {
-            case 0:  result = checkResponseCode(code, event: event)
-            case 1:  result = checkResponseContent(dataResponse.error, event: event)
+            case 0:
+                result = checkResponseCode(code,
+                                           data: data,
+                                           event: event)
+            case 1:
+                result = checkResponseContent(dataResponse.error,
+                                              data: data,
+                                              event: event)
             case 2:
                 if let data = dataResponse.data {
                     dataResult = .pass(data)
                 } else {
-                    let error =  ArError.fail("response data nil",
-                                              extra: "return data nil, event: \(event.description)")
+                    let error = ArError.fail("response data nil",
+                                             code: code,
+                                             extra: "event: \(event.description)")
                     dataResult = .fail(error)
                 }
             default: break
@@ -453,6 +462,7 @@ private extension Armin {
     }
     
     func checkResponseCode(_ code: Int?,
+                           data: Data?,
                            event: ArRequestEvent) -> CheckResult {
         var result: CheckResult = .pass
         
@@ -465,29 +475,34 @@ private extension Armin {
             case .error(let code):
                 let error = ArError.fail("response code error",
                                          code: code,
-                                         extra: "event: \(event.description)")
+                                         extra: "event: \(event.description)",
+                                         responseData: data)
                 result = .fail(error)
             }
         } else {
             let error = ArError.fail("connect with server error, response code nil",
-                                     extra: "event: \(event.description)")
+                                     extra: "event: \(event.description)",
+                                     responseData: data)
             result = .fail(error)
         }
         return result
     }
     
     func checkResponseContent(_ error: Error?,
+                              data: Data?,
                               event: ArRequestEvent) -> CheckResult {
         var result: CheckResult = .pass
         
         if let error = error as? AFError {
             let mError = ArError.fail(error.localizedDescription,
                                       code: error.responseCode,
-                                      extra: "event: \(event.description)")
+                                      extra: "event: \(event.description)",
+                                      responseData: data)
             result = .fail(mError)
         } else if let error = error {
             let mError = ArError.fail(error.localizedDescription,
-                                      extra: "event: \(event.description)")
+                                      extra: "event: \(event.description)",
+                                      responseData: data)
             result = .fail(mError)
         }
         return result

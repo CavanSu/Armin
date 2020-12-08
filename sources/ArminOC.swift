@@ -18,7 +18,7 @@
 }
 
 @objc public class ArErrorOC: NSError {
-    
+    @objc public var reposeData: Data?
 }
 
 @objc public class ArminOC: Armin {
@@ -83,8 +83,9 @@
             if let fail = fail {
                 let swift_error = error as! ArError
                 let oc_error = ArErrorOC(domain: swift_error.localizedDescription,
-                                         code: -1,
+                                         code: swift_error.code ?? -1,
                                          userInfo: nil)
+                oc_error.reposeData = swift_error.responseData
                 let failRetryInterval = fail(oc_error);
                 
                 if failRetryInterval > 0 {
@@ -146,8 +147,9 @@
             if let fail = fail {
                 let swift_error = error as! ArError
                 let oc_error = ArErrorOC(domain: swift_error.localizedDescription,
-                                         code: -1,
+                                         code: swift_error.code ?? -1,
                                          userInfo: nil)
+                oc_error.reposeData = swift_error.responseData
                 let failRetryInterval = fail(oc_error);
                 
                 if failRetryInterval > 0 {
@@ -179,8 +181,8 @@ extension ArminOC: ArminDelegate {
                       event: ArRequestEvent,
                       url: String) {
         let eventOC = ArRequestEventOC(name: event.name)
-        let errorOC = ArErrorOC(domain: error.localizedDescription + (error.extra ?? ""),
-                                code: (error.code ?? 0),
+        let errorOC = ArErrorOC(domain: error.localizedDescription,
+                                code: error.code ?? -1,
                                 userInfo: nil)
         self.delegateOC?.armin(self,
                                requestFail: errorOC,
@@ -203,6 +205,7 @@ extension ArminOC: ArLogTube {
             let oc_error = ArErrorOC(domain: arError.localizedDescription,
                                      code: arError.code ?? -1,
                                      userInfo: nil)
+            oc_error.reposeData = arError.responseData
             logTubeOC?.log(error: oc_error, extra: extra)
         } else {
             let oc_error = ArErrorOC(domain: error.localizedDescription,
