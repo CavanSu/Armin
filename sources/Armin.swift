@@ -310,7 +310,15 @@ private extension Armin {
                     try completion(json)
                 }
             } catch {
-                self.log(error: error,
+                var tError: ArError
+                
+                if let arError = error as? ArError {
+                    tError = arError
+                } else {
+                    tError = ArError.fail(error.localizedDescription)
+                }
+                
+                self.log(error: tError,
                          extra: "event: \(task.event)")
                 if let fail = fail {
                     fail(error)
@@ -514,28 +522,40 @@ private extension Armin {
     func requestSuccess(of event: ArRequestEvent,
                         startTime: TimeInterval,
                         with url: String) {
-        self.delegate?.armin(self, requestSuccess: event, startTime: startTime, url: url)
+        self.delegate?.armin(self,
+                             requestSuccess: event,
+                             startTime: startTime,
+                             url: url)
     }
     
     func request(error: ArError,
                  of event: ArRequestEvent,
                  with url: String) {
-        self.delegate?.armin(self, requestFail: error, event: event, url: url)
+        self.delegate?.armin(self,
+                             requestFail: error,
+                             event: event,
+                             url: url)
     }
 }
 
 // MARK: Log
 private extension Armin {
-    func log(info: String, extra: String? = nil) {
-        logTube?.log(info: info, extra: extra)
+    func log(info: String,
+             extra: String? = nil) {
+        logTube?.log(info: info,
+                     extra: extra)
     }
     
-    func log(warning: String, extra: String? = nil) {
-        logTube?.log(warning: warning, extra: extra)
+    func log(warning: String,
+             extra: String? = nil) {
+        logTube?.log(warning: warning,
+                     extra: extra)
     }
     
-    func log(error: Error, extra: String? = nil) {
-        logTube?.log(error: error, extra: extra)
+    func log(error: ArError,
+             extra: String? = nil) {
+        logTube?.log(error: error,
+                     extra: extra)
     }
 }
 

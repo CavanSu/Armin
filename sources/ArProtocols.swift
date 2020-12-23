@@ -11,7 +11,7 @@ import Foundation
 public protocol ArLogTube: NSObjectProtocol {
     func log(info: String, extra: String?)
     func log(warning: String, extra: String?)
-    func log(error: Error, extra: String?)
+    func log(error: ArError, extra: String?)
 }
 
 @objc public protocol ArLogTubeOC: NSObjectProtocol {

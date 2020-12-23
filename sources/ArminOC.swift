@@ -192,27 +192,26 @@ extension ArminOC: ArminDelegate {
 }
 
 extension ArminOC: ArLogTube {
-    public func log(info: String, extra: String?) {
-        logTubeOC?.log(info: info, extra: extra)
+    public func log(info: String,
+                    extra: String?) {
+        logTubeOC?.log(info: info,
+                       extra: extra)
     }
     
-    public func log(warning: String, extra: String?) {
-        logTubeOC?.log(warning: warning, extra: extra)
+    public func log(warning: String,
+                    extra: String?) {
+        logTubeOC?.log(warning: warning,
+                       extra: extra)
     }
     
-    public func log(error: Error, extra: String?) {
-        if let arError = error as? ArError {
-            let oc_error = ArErrorOC(domain: arError.localizedDescription,
-                                     code: arError.code ?? -1,
-                                     userInfo: nil)
-            oc_error.reposeData = arError.responseData
-            logTubeOC?.log(error: oc_error, extra: extra)
-        } else {
-            let oc_error = ArErrorOC(domain: error.localizedDescription,
-                                     code: -1,
-                                     userInfo: nil)
-            logTubeOC?.log(error: oc_error, extra: extra)
-        }
+    public func log(error: ArError,
+                    extra: String?) {
+        let oc_error = ArErrorOC(domain: error.localizedDescription,
+                                 code: error.code ?? -1,
+                                 userInfo: nil)
+        oc_error.reposeData = error.responseData
+        logTubeOC?.log(error: oc_error,
+                       extra: extra)
     }
 }
 
