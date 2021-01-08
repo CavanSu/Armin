@@ -18,9 +18,9 @@ public typealias ArDicEXCompletion = (([String: Any]) throws -> Void)?
 public typealias ArStringExCompletion = ((String) throws -> Void)?
 public typealias ArDataExCompletion = ((Data) throws -> Void)?
 
-public typealias ArErrorCompletion = ((Error) -> Void)?
-public typealias ArErrorBoolCompletion = ((Error) -> Bool)?
-public typealias ArErrorRetryCompletion = ((Error) -> ArRetryOptions)?
+public typealias ArErrorCompletion = ((ArError) -> Void)?
+public typealias ArErrorBoolCompletion = ((ArError) -> Bool)?
+public typealias ArErrorRetryCompletion = ((ArError) -> ArRetryOptions)?
 
 public typealias ArErrorRetryCompletionOC = ((ArErrorOC) -> TimeInterval)?
 

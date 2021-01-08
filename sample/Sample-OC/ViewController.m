@@ -124,7 +124,7 @@ requestSuccess:(ArRequestEventOC *)event
     NSLog(@"log warning: %@, extra: %@", warning, extra);
 }
 
-- (void)logWithError:(NSError *)error
+- (void)logWithError:(ArErrorOC *)error
                extra:(NSString *)extra {
     NSLog(@"log error: %@, extra: %@", error, extra);
 }

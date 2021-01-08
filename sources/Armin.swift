@@ -172,22 +172,37 @@ private extension Armin {
         log(info: "http request, event: \(task.event.description)",
             extra: "url: \(url), parameter: \(OptionsDescription.any(task.parameters))")
         
-        var queue: DispatchQueue
-        if responseOnMainQueue {
-            queue = DispatchQueue.main
-        } else {
-            queue = responseQueue
-        }
+        let queue = responseQueue
         
-        dataRequest.responseData(queue: queue) { [unowned self] (dataResponse) in
-            self.removeInstance(taskId)
-            self.removeWorker(of: task.event)
-            self.handle(dataResponse: dataResponse,
-                        from: task,
-                        url: url,
-                        startTime: startTime,
-                        success: success,
-                        fail: requestFail)
+        dataRequest.responseData(queue: queue) { [weak self] (dataResponse) in
+            guard let strongSelf = self else {
+                return
+            }
+            
+            strongSelf.removeInstance(taskId)
+            strongSelf.removeWorker(of: task.event)
+            
+            if responseOnMainQueue {
+                DispatchQueue.main.async { [weak self] in
+                    guard let strongSelf = self else {
+                        return
+                    }
+                    
+                    strongSelf.handle(dataResponse: dataResponse,
+                                      from: task,
+                                      url: url,
+                                      startTime: startTime,
+                                      success: success,
+                                      fail: requestFail)
+                }
+            } else {
+                strongSelf.handle(dataResponse: dataResponse,
+                                  from: task,
+                                  url: url,
+                                  startTime: startTime,
+                                  success: success,
+                                  fail: requestFail)
+            }
         }
     }
     
@@ -248,18 +263,40 @@ private extension Armin {
                     self.removeInstance(taskId)
                     self.removeWorker(of: task.event)
                     
-                    self.handle(dataResponse: dataResponse,
-                                from: task,
-                                url: url,
-                                startTime: startTime,
-                                success: success,
-                                fail: requestFail)
+                    if responseOnMainQueue {
+                        DispatchQueue.main.async { [unowned self] in
+                            self.handle(dataResponse: dataResponse,
+                                        from: task,
+                                        url: url,
+                                        startTime: startTime,
+                                        success: success,
+                                        fail: requestFail)
+                        }
+                    } else {
+                        self.handle(dataResponse: dataResponse,
+                                    from: task,
+                                    url: url,
+                                    startTime: startTime,
+                                    success: success,
+                                    fail: requestFail)
+                    }
                 }
             case .failure(let error):
                 self.removeInstance(taskId)
                 let mError = ArError.fail(error.localizedDescription)
-                self.request(error: mError, of: task.event, with: url)
-                if let requestFail = requestFail {
+                self.request(error: mError,
+                             of: task.event,
+                             with: url)
+                
+                guard let requestFail = requestFail  else {
+                    return
+                }
+                
+                if responseOnMainQueue {
+                    DispatchQueue.main.async {
+                        requestFail(mError)
+                    }
+                } else {
                     requestFail(mError)
                 }
             }
@@ -291,6 +328,7 @@ private extension Armin {
                     guard let completion = completion else {
                         break
                     }
+                    
                     completion()
                 case .data(let completion):
                     self.log(info: "request success",
@@ -298,6 +336,7 @@ private extension Armin {
                     guard let completion = completion else {
                         break
                     }
+                    
                     try completion(data)
                 case .json(let completion):
                     let json = try data.json()
@@ -320,9 +359,12 @@ private extension Armin {
                 
                 self.log(error: tError,
                          extra: "event: \(task.event)")
-                if let fail = fail {
-                    fail(error)
+                
+                guard let fail = fail else {
+                    return
                 }
+                
+                fail(tError)
             }
         case .fail(let error):
             self.request(error: error,
@@ -330,9 +372,12 @@ private extension Armin {
                          with: url)
             self.log(error: error,
                      extra: "event: \(task.event), url: \(url)")
-            if let fail = fail {
-                fail(error)
+            
+            guard let fail = fail else {
+                return
             }
+            
+            fail(error)
         }
     }
 }
@@ -522,19 +567,23 @@ private extension Armin {
     func requestSuccess(of event: ArRequestEvent,
                         startTime: TimeInterval,
                         with url: String) {
-        self.delegate?.armin(self,
-                             requestSuccess: event,
-                             startTime: startTime,
-                             url: url)
+        DispatchQueue.main.async { [unowned self] in
+            self.delegate?.armin(self,
+                                 requestSuccess: event,
+                                 startTime: startTime,
+                                 url: url)
+        }
     }
     
     func request(error: ArError,
                  of event: ArRequestEvent,
                  with url: String) {
-        self.delegate?.armin(self,
-                             requestFail: error,
-                             event: event,
-                             url: url)
+        DispatchQueue.main.async { [unowned self] in
+            self.delegate?.armin(self,
+                                 requestFail: error,
+                                 event: event,
+                                 url: url)
+        }
     }
 }
 
@@ -542,20 +591,26 @@ private extension Armin {
 private extension Armin {
     func log(info: String,
              extra: String? = nil) {
-        logTube?.log(info: info,
-                     extra: extra)
+        DispatchQueue.main.async { [unowned self] in
+            self.logTube?.log(info: info,
+                              extra: extra)
+        }
     }
     
     func log(warning: String,
              extra: String? = nil) {
-        logTube?.log(warning: warning,
-                     extra: extra)
+        DispatchQueue.main.async { [unowned self] in
+            self.logTube?.log(warning: warning,
+                              extra: extra)
+        }
     }
     
     func log(error: ArError,
              extra: String? = nil) {
-        logTube?.log(error: error,
-                     extra: extra)
+        DispatchQueue.main.async { [unowned self] in
+            self.logTube?.log(error: error,
+                              extra: extra)
+        }
     }
 }
 

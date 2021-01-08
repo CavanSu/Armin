@@ -86,7 +86,7 @@ extension ViewController: ArLogTube {
         print("warning: \(warning), extra: \(extra ?? "nil")")
     }
     
-    func log(error: Error,
+    func log(error: ArError,
              extra: String?) {
         print("error: \(error), extra: \(extra ?? "nil")")
     }

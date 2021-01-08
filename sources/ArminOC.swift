@@ -81,7 +81,7 @@
                 responseOnMainQueue: responseOnMainQueue,
                 success: response) { (error) -> ArRetryOptions in
             if let fail = fail {
-                let swift_error = error as! ArError
+                let swift_error = error
                 let oc_error = ArErrorOC(domain: swift_error.localizedDescription,
                                          code: swift_error.code ?? -1,
                                          userInfo: nil)
