@@ -1,6 +1,6 @@
 Pod::Spec.new do |spec|
   spec.name         = "Armin"
-  spec.version      = "1.0.6"
+  spec.version      = "1.0.7"
   spec.summary      = "Armin is a http/https request service."
   spec.homepage     = "https://github.com/CavanSu/Armin"
   spec.license      = "MIT"
@@ -10,7 +10,7 @@ Pod::Spec.new do |spec|
   spec.source       = { :git => "https://github.com/CavanSu/Armin.git", :tag => "#{spec.version}" }
 
   spec.source_files  = "sources/*.{h,m,swift}"
-  spec.dependency "Alamofire", "~> 4.7.3"
+  spec.dependency "Alamofire", ">= 4.7.3"
   spec.module_name   = 'Armin'
   spec.swift_version = '4.0'
   
