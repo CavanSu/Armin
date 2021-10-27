@@ -21,7 +21,7 @@
     @objc public var reposeData: Data?
 }
 
-@objc public class ArminOC: Armin {
+@objc open class ArminOC: Armin {
     @objc public weak var delegateOC: ArminDelegateOC?
     @objc public weak var logTubeOC: ArLogTubeOC?
     

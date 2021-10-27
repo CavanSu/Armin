@@ -19,7 +19,7 @@ public protocol ArminDelegate: NSObjectProtocol {
                url: String)
 }
 
-public class Armin: NSObject, ArRequestAPIsProtocol {
+open class Armin: NSObject, ArRequestAPIsProtocol {
     private lazy var instances = [Int: SessionManager]() // Int: taskId
     private lazy var afterWorkers = [String: AfterWorker]() // String: ArRequestEvent name
     
