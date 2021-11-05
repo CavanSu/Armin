@@ -119,10 +119,36 @@ public extension Armin {
 }
 
 // MARK: Request
-public typealias ArHttpMethod = HTTPMethod
+public enum ArHttpMethod: String {
+    case options = "OPTIONS"
+    case get     = "GET"
+    case head    = "HEAD"
+    case post    = "POST"
+    case put     = "PUT"
+    case patch   = "PATCH"
+    case delete  = "DELETE"
+    case trace   = "TRACE"
+    case connect = "CONNECT"
+}
 
-extension HTTPMethod {
-    fileprivate var encoding: ParameterEncoding {
+fileprivate extension ArHttpMethod {
+    var alType: HTTPMethod {
+        switch self {
+        case .options: return .options
+        case .get:     return .get
+        case .head:    return .head
+        case .post:    return .post
+        case .put:     return .put
+        case .patch:   return .patch
+        case .delete:  return .delete
+        case .trace:   return .trace
+        case .connect: return .connect
+        }
+    }
+}
+
+fileprivate extension HTTPMethod {
+     var encoding: ParameterEncoding {
         switch self {
         case .get:   return URLEncoding.default
         case .post:  return JSONEncoding.default
@@ -158,14 +184,14 @@ private extension Armin {
                                        parameters: parameters)
             }
             dataRequest = instance.request(url,
-                                           method: httpMethod,
-                                           encoding: httpMethod.encoding,
+                                           method: httpMethod.alType,
+                                           encoding: httpMethod.alType.encoding,
                                            headers: task.header)
         } else {
             dataRequest = instance.request(url,
-                                           method: httpMethod,
+                                           method: httpMethod.alType,
                                            parameters: task.parameters,
-                                           encoding: httpMethod.encoding,
+                                           encoding: httpMethod.alType.encoding,
                                            headers: task.header)
         }
         
