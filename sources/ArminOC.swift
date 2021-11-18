@@ -36,7 +36,7 @@
     }
     
     @objc public func request(task: ArRequestTaskOC,
-                              responseOnMainQueue: Bool = true,
+                              responseOnQueue: DispatchQueue?,
                               successCallbackContent: ArResponseTypeOC,
                               success: ((ArResponseOC) -> Void)? = nil,
                               fail: ArErrorRetryCompletionOC = nil) {
@@ -78,7 +78,7 @@
         }
         
         request(task: swift_task,
-                responseOnMainQueue: responseOnMainQueue,
+                responseOnQueue: responseOnQueue,
                 success: response) { (error) -> ArRetryOptions in
             if let fail = fail {
                 let swift_error = error
@@ -100,7 +100,7 @@
     }
     
     @objc public func upload(task: ArUploadTaskOC,
-                             responseOnMainQueue: Bool = true,
+                             responseOnQueue:DispatchQueue?,
                              successCallbackContent: ArResponseTypeOC,
                              success: ((ArResponseOC) -> Void)? = nil,
                              fail: ArErrorRetryCompletionOC = nil) {
@@ -142,7 +142,7 @@
         let swift_task = ArUploadTask.oc(task)
         
         upload(task: swift_task,
-               responseOnMainQueue: responseOnMainQueue,
+               responseOnQueue: responseOnQueue,
                success: response) { (error) -> ArRetryOptions in
             if let fail = fail {
                 let swift_error = error
@@ -251,15 +251,16 @@ fileprivate extension ArRequestType {
 fileprivate extension ArHttpMethod {
     static func oc(_ item: ArHTTPMethodOC) -> ArHttpMethod {
         switch item {
-        case .options: return .options
-        case .connect: return .connect
+//        case .options: return .options
+//        case .connect: return .connect
         case .delete:  return .delete
         case .get:     return .get
         case .head:    return .head
-        case .patch:   return .patch
+//        case .patch:   return .patch
         case .post:    return .post
         case .put:     return .put
-        case .trace:   return .trace
+        case .download: return .download
+//        case .trace:   return .trace
         }
     }
 }

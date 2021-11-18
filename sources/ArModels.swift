@@ -14,6 +14,8 @@ public typealias ArStringCompletion = ((String) -> Void)?
 public typealias ArIntCompletion = ((Int) -> Void)?
 public typealias ArCompletion = (() -> Void)?
 
+public typealias ArDownloadProgress = ((_ progress: Float) -> Void)?
+
 public typealias ArDicEXCompletion = (([String: Any]) throws -> Void)?
 public typealias ArStringExCompletion = ((String) throws -> Void)?
 public typealias ArDataExCompletion = ((Data) throws -> Void)?
@@ -26,7 +28,8 @@ public typealias ArErrorRetryCompletionOC = ((ArErrorOC) -> TimeInterval)?
 
 // MARK: enum
 public enum ArRetryOptions {
-    case retry(after: TimeInterval, newTask: ArRequestTaskProtocol? = nil), resign
+    case retry(after: TimeInterval,
+               newTask: ArRequestTaskProtocol? = nil), resign
 }
 
 public enum ArSwitch: Int, CustomStringConvertible {
@@ -81,7 +84,10 @@ public enum ArRequestType {
 }
 
 public enum ArResponse {
-    case json(ArDicEXCompletion), data(ArDataExCompletion), blank(ArCompletion)
+    case json(ArDicEXCompletion)
+    case data(ArDataExCompletion)
+    case string(ArStringExCompletion)
+    case blank(ArCompletion)
 }
 
 public enum ArRequestTimeout {
@@ -147,6 +153,29 @@ public struct ArUploadObject: CustomStringConvertible {
         return ["fileKeyOnServer": fileKeyOnServer,
                 "fileName": fileName,
                 "mime": mime.text].description
+    }
+}
+
+public struct ArDownloadObject: CustomStringConvertible {
+    public var targetDirectory: String
+    public var cover: Bool
+    
+    public init(folderPath: String,
+                cover: Bool = true) {
+        self.targetDirectory = folderPath
+        self.cover = cover
+    }
+    
+    public var description: String {
+        return cusDescription()
+    }
+    
+    var debugDescription: String {
+        return cusDescription()
+    }
+    
+    func cusDescription() -> String {
+        return ["folderPath": targetDirectory].description
     }
 }
 
@@ -216,14 +245,50 @@ public struct ArUploadTask: ArUploadTaskProtocol, CustomStringConvertible {
     }
 }
 
-fileprivate struct TaskId {
-    static var value: Int = Date.millisecondTimestamp
+public struct ArDownloadTask: ArDownloadTaskProtocol, CustomStringConvertible {
+    public var description: String {
+        return cusDescription()
+    }
+    
+    var debugDescription: String {
+        return cusDescription()
+    }
+    
+    public private(set) var id: Int
+    public private(set) var requestType: ArRequestType
+    
+    public var event: ArRequestEvent
+    public var timeout: ArRequestTimeout
+    public var header: [String: String]?
+    public var parameters: [String: Any]?
+    public var object: ArDownloadObject
+    
+    public init(event: ArRequestEvent,
+                timeout: ArRequestTimeout = .medium,
+                object: ArDownloadObject,
+                url: String,
+                header: [String: String]? = nil,
+                parameters: [String: Any]? = nil) {
+        TaskId.value += 1
+        self.id = TaskId.value
+        self.object = object
+        self.requestType = .http(.download, url: url)
+        self.event = event
+        self.timeout = timeout
+        self.header = header
+        self.parameters = parameters
+    }
+    
+    func cusDescription() -> String {
+        let dic: [String: Any] = ["object": object.description,
+                                  "header": OptionsDescription.any(header),
+                                  "parameters": OptionsDescription.any(parameters)]
+        return dic.description
+    }
 }
 
-fileprivate extension Date {
-    static var millisecondTimestamp: Int {
-        return Int(CACurrentMediaTime() * 1000)
-    }
+fileprivate struct TaskId {
+    static var value: Int = Date.millisecondTimestamp
 }
 
 // MARK: OC Models
@@ -240,15 +305,16 @@ fileprivate extension Date {
 }
 
 @objc public enum ArHTTPMethodOC: Int {
-    case options
+//    case options
     case get
     case head
     case post
     case put
-    case patch
+//    case patch
     case delete
-    case trace
-    case connect
+//    case trace
+//    case connect
+    case download
 }
 
 @objc public enum ArResponseTypeOC: Int {
@@ -369,5 +435,25 @@ fileprivate extension Date {
         self.timeout = timeout
         self.header = header
         self.parameters = parameters
+    }
+}
+
+public enum ArHttpMethod {
+    case get
+    case head
+    case post
+    case put
+    case delete
+    case download
+    
+    var stringValue: String {
+        switch self {
+        case .get: return "GET"
+        case .head: return "HEAD"
+        case .post: return "POST"
+        case .put: return "PUT"
+        case .delete: return "DELETE"
+        case .download: return "DOWNLOAD"
+        }
     }
 }

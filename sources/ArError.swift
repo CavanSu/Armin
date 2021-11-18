@@ -12,6 +12,9 @@ public struct ArError: Error {
         case invalidParameter(String)
         case valueNil(String)
         case convert(String, String)
+        case fileExists(String)
+        case taskExists(Int)
+        case copyFile(String,String)
         case unknown
         
         var description: String {
@@ -21,6 +24,9 @@ public struct ArError: Error {
             case .invalidParameter(let para):   description = "\(para)"
             case .valueNil(let para):           description = "\(para) nil"
             case .convert(let a, let b):        description = "\(a) converted to \(b) error"
+            case .fileExists(let path):         description = "\(path) already exists"
+            case .taskExists(let taskId):         description = "\(taskId) already exists"
+            case .copyFile(let ori, let target):description = "copy from \(ori) to \(target) error"
             case .unknown:                      description = "unknown error"
             }
             return description

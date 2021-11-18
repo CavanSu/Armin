@@ -15,8 +15,13 @@ class ViewController: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        getRequest()
+        downloadRequest()
+//        stopTask()
+        
+    }
+    
+    override func touchesBegan(with event: NSEvent) {
+        
     }
 
     override var representedObject: Any? {
@@ -57,6 +62,32 @@ class ViewController: NSViewController {
             return .resign
         }
     }
+    
+    func downloadRequest() {
+//        let urlStr = "https://img2.baidu.com/it/u=3666548066,2508071679&fm=26&fmt=auto"
+        let urlStr = "https://convertcdn.netless.link/publicFiles.zip"
+        let event = ArRequestEvent(name: "download-image")
+        let obj = ArDownloadObject(folderPath: "/Users/doublecircle/Desktop/Armin_local",
+                                   cover: false)
+        let task = ArDownloadTask(event: event,
+                                  object: obj,
+                                  url: urlStr)
+        client.download(task: task,
+                        progress: { progress in
+            print("----------Progress: \(progress)")
+        }, success: ArResponse.string({ finalPath in
+            print("----final path: \(finalPath)")
+        })) { (error) -> ArRetryOptions in
+            print("----error: \(error.localizedDescription)")
+            return .resign
+        }
+    }
+    
+    func stopTask() {
+        let urlStr = "https://convertcdn.netless.link/publicFiles.zip"
+        
+        client.stopTasks(urls: [urlStr])
+    }
 }
 
 extension ViewController: ArminDelegate {
@@ -78,16 +109,16 @@ extension ViewController: ArminDelegate {
 extension ViewController: ArLogTube {
     func log(info: String,
              extra: String?) {
-        print("info: \(info), extra: \(extra ?? "nil")")
+        print("info: \(info),\n extra: \(extra ?? "nil")\n")
     }
     
     func log(warning: String,
              extra: String?) {
-        print("warning: \(warning), extra: \(extra ?? "nil")")
+        print("warning: \(warning),\n extra: \(extra ?? "nil")\n")
     }
     
     func log(error: ArError,
              extra: String?) {
-        print("error: \(error), extra: \(extra ?? "nil")")
+        print("error: \(error),\n extra: \(extra ?? "nil")\n")
     }
 }

@@ -37,15 +37,27 @@ public protocol ArUploadTaskProtocol: ArRequestTaskProtocol {
     var object: ArUploadObject {get set}
 }
 
+public protocol ArDownloadTaskProtocol: ArRequestTaskProtocol {
+    var object: ArDownloadObject {get set}
+}
+
 // MARK: - Request APIs
 public protocol ArRequestAPIsProtocol {
     func request(task: ArRequestTaskProtocol,
-                 responseOnMainQueue: Bool,
+                 responseOnQueue: DispatchQueue?,
                  success: ArResponse?,
                  failRetry: ArErrorRetryCompletion)
     
     func upload(task: ArUploadTaskProtocol,
-                responseOnMainQueue: Bool,
+                responseOnQueue: DispatchQueue?,
                 success: ArResponse?,
                 failRetry: ArErrorRetryCompletion)
+    
+    func download(task: ArDownloadTaskProtocol,
+                  responseOnQueue: DispatchQueue?,
+                  progress: ArDownloadProgress,
+                  success: ArResponse?,
+                  failRetry: ArErrorRetryCompletion)
+    
+    func stopTasks(urls: [String])
 }

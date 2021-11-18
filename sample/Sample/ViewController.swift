@@ -15,7 +15,10 @@ class ViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        getRequest()
+    }
+    
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        downloadRequest()
     }
     
     func getRequest() {
@@ -53,6 +56,28 @@ class ViewController: UIViewController {
         
         client.request(task: task, success: ArResponse.json({ (json) in
             print("weather json: \(json.description)")
+        })) { (error) -> ArRetryOptions in
+            print("error: \(error.localizedDescription)")
+            return .resign
+        }
+    }
+    
+    func uploadRequest() {
+        
+    }
+    
+    func downloadRequest() {
+        let urlStr = "https://convertcdn.netless.link/publicFiles.zip"
+        let event = ArRequestEvent(name: "download-image")
+        let obj = ArDownloadObject(folderPath: "/Users/doublecircle/Desktop/Armin_local")
+        let task = ArDownloadTask(event: event,
+                                  object: obj,
+                                  url: urlStr)
+        client.download(task: task,
+                        progress: { progress in
+            print("----------Progress: \(progress)")
+        }, success: ArResponse.string({ finalPath in
+            print("----final path: \(finalPath)")
         })) { (error) -> ArRetryOptions in
             print("error: \(error.localizedDescription)")
             return .resign

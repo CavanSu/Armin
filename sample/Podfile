@@ -29,5 +29,4 @@ target 'Sample-OC' do
 
   # Pods for Sample
   pod 'Armin', :path => '../'
-  pod 'Alamofire', '4.7.3'
 end
