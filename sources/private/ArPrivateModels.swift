@@ -49,14 +49,17 @@ struct MultipartFormDataRequest {
 
     func addTextField(named name: String,
                       value: String) {
-        let str = textFormField(named: name, value: value)
+        let str = textFormField(named: name,
+                                value: value)
         httpBody.append(str)
     }
 
     func addDataField(named name: String,
                       data: Data,
                       mimeType: String) {
-        let data = dataFormField(named: name, data: data, mimeType: mimeType)
+        let data = dataFormField(named: name,
+                                 data: data,
+                                 mimeType: mimeType)
         httpBody.append(data)
     }
 }

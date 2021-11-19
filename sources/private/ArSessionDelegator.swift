@@ -32,6 +32,7 @@ import Foundation
               let handler = armin.taskHandlers[task.taskIdentifier] else {
                   return
               }
+        
         armin.removeTask(taskId: task.taskIdentifier)
         if let requestError = error,
            let fail = handler.requestFail {
@@ -63,7 +64,7 @@ import Foundation
                     downloadTask: URLSessionDownloadTask,
                     didFinishDownloadingTo location: URL) {
         
-        armin.removeTask(taskId: task.taskIdentifier)
+        armin?.removeTask(taskId: downloadTask.taskIdentifier)
         
         guard let handler = armin?.taskHandlers[downloadTask.taskIdentifier],
               let downloadTask = handler.task as? ArDownloadTaskProtocol,

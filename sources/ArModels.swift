@@ -429,7 +429,8 @@ fileprivate struct TaskId {
         self.id = TaskId.value
         self.url = url
         self.object = object
-        self.requestType = .http(.post, url: url)
+        self.requestType = .http(.post,
+                                 url: url)
         self.event = event
         
         self.timeout = timeout

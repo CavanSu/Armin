@@ -21,7 +21,6 @@ public protocol ArminUploadProtocol: ArminRequestProtocol {
     var object: ArminUploadObject {get set}
 }
 
-
 // MARK: - models
 public struct ArminUploadObject: CustomStringConvertible {
     public var fileKeyOnServer: String

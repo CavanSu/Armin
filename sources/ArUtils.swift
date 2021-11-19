@@ -54,8 +54,8 @@ class ArFileHandler {
            let url = URL(string: directoryPath) {
             do {
                 try FileManager.default.createDirectory(at: url,
-                                                    withIntermediateDirectories: true,
-                                                                        attributes: nil)
+                                                        withIntermediateDirectories: true,
+                                                        attributes: nil)
             } catch {
                 // 创建文件夹失败
                 throw ArError(type: .invalidParameter("directoryPath:\(directoryPath),error:\(error)"))
@@ -65,7 +65,7 @@ class ArFileHandler {
         let path = directoryPath.appending("/\(fileName)")
         if FileManager.default.fileExists(atPath: path) {
             if cover,
-            let fileUrl = URL(string: path) {
+               let fileUrl = URL(string: path) {
                 // 文件存在，删除已存在文件
                 try? FileManager.default.removeItem(at: fileUrl)
                 return path
@@ -82,7 +82,7 @@ class ArFileHandler {
         // Move file
         do {
             try FileManager.default.copyItem(atPath: filePath,
-                                              toPath: targetPath)
+                                             toPath: targetPath)
         } catch{
             let err = error as NSError
             throw ArError(type: .copyFile(filePath,
