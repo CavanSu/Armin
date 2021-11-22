@@ -59,5 +59,5 @@ public protocol ArRequestAPIsProtocol {
                   success: ArResponse?,
                   failRetry: ArErrorRetryCompletion)
     
-    func stopTasks(urls: [String])
+    func stopTasks(urls: [String]?)
 }

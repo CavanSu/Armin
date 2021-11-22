@@ -95,6 +95,50 @@ class ArFileHandler {
 }
 
 // MARK: extension
+extension URLRequest {
+    mutating func makeHeaders(headers: [String: String]?) {
+        guard let headersDic = headers else {
+            return
+        }
+        
+        for (k,v) in headersDic {
+            self.setValue(v,
+                          forHTTPHeaderField: k)
+        }
+    }
+    
+    // TODO: not work
+    mutating func makeBody(parameters: [String: Any]?) {
+        if let params = parameters {
+            let JSONArr = NSMutableArray()
+            for (k,v) in params {
+                let valueStr = toString(key: k,value: v)
+                JSONArr.add("\(k)\("=")\(valueStr)")
+            }
+            let data = JSONArr.componentsJoined(by: "&").data(using: .utf8)
+            self.httpBody = data
+        }
+    }
+    
+    // TODO: not work
+    func toString(key: String,
+                  value: Any) -> String {
+        var dicStr = ""
+        if let valueDic = value as? [String: Any] {
+            for(k,v) in valueDic {
+                return toString(key: k,
+                                value: v)
+            }
+        } else if let valueArr  = value as? Array<Any> {
+            let valueStr = toString(key: key,
+                                    value: valueArr)
+            dicStr = "\(key)\("=")\(valueStr)"
+        } else if let valueStr = value as? String {
+            dicStr = valueStr
+        }
+        return dicStr
+    }
+}
 extension Data {
     func json() throws -> [String: Any] {
         let object = try JSONSerialization.jsonObject(with: self, options: [])
@@ -103,20 +147,6 @@ extension Data {
         }
         
         return dic
-    }
-    
-    func toArError() -> ArError? {
-        let object = try? JSONSerialization.jsonObject(with: self, options: [])
-        guard let dic = object as? [String: Any],
-              let errcode = dic["errcode"] as? Int,
-              let errmsg = dic["errmsg"] as? String else {
-                  return nil
-              }
-        let arError = ArError(type: .fail(errmsg),
-                              code: errcode,
-                              extra: nil,
-                              responseData: self)
-        return arError
     }
 }
 

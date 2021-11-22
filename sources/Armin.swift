@@ -237,19 +237,25 @@ public extension Armin {
         }
     }
     
-    func stopTasks(urls: [String]) {
-        // TODO: 同url可能对应多个handler
-        for url in urls {
-            for item in taskHandlers.enumerated() {
-                if item.element.value.urlStr == url {
-                    item.element.value.sessionTask.cancel()
-                    removeTask(taskId: item.element.key)
+    func stopTasks(urls: [String]?) {
+        guard let allUrls = urls else {
+            taskHandlers.keys.forEach {[weak self] id in
+                self?.removeTask(taskId: id)
+            }
+            return
+        }
+        
+        for url in allUrls {
+            for (id,handler) in taskHandlers {
+                if handler.urlStr == url {
+                    removeTask(taskId: id)
                 }
             }
         }
     }
     
     func removeTask(taskId: Int) {
+        taskHandlers[taskId]?.sessionTask.cancel()
         taskHandlers.removeValue(forKey: taskId)
     }
 }
@@ -275,11 +281,13 @@ private extension Armin {
         
         var request = URLRequest(url: url,
                                  timeoutInterval: task.timeout.value)
-        switch task.requestType.httpMethod {
-        case .post:
-            request.httpBody = makePostBody(parameters: task.parameters)
-        default:
-            break
+        
+        if task.requestType.httpMethod == .post {
+            request.makeBody(parameters: task.parameters)
+        }
+        
+        if task.requestType.httpMethod == .put {
+            request.makeBody(parameters: task.parameters)
         }
         
         let startTime = Date.timeIntervalSinceReferenceDate
@@ -296,16 +304,6 @@ private extension Armin {
                                            code: -1,
                                            extra: nil,
                                            responseData: data)
-                self.request(error: arError,
-                             of: task.event,
-                             with: urlStr)
-                requestFail?(arError)
-                return
-            }
-            
-            // TODO: data一定有值？
-            if let _data = data,
-               let arError = _data.toArError() {
                 self.request(error: arError,
                              of: task.event,
                              with: urlStr)
@@ -363,21 +361,13 @@ private extension Armin {
                 return
             }
             
-            if let _data = data,
-               let arError = _data.toArError() {
-                self.request(error: arError,
-                             of: task.event,
-                             with: urlStr)
-                requestFail?(arError)
-                return
-            }
-                // handle success
-                responseOnQueue.async {
-                    self.handleHttpSuccess(data: data,
+            // handle success
+            responseOnQueue.async {
+                self.handleHttpSuccess(data: data,
                                        startTime: startTime,
                                        from: task,
                                        success: success)
-                }
+            }
             
         }
 
@@ -475,7 +465,7 @@ private extension Armin {
                  parameters: Dictionary<String, Any>?) -> URL? {
         var urlString = urlstr
         switch httpMethod {
-        case .get:
+        case .get,.head,.delete:
             if let params = parameters {
                 let JSONArr:NSMutableArray = NSMutableArray()
                 for key in params.keys {
@@ -489,18 +479,6 @@ private extension Armin {
             break
         }
         return URL(string:urlString.urlEncoded())
-    }
-    
-    func makePostBody(parameters: Dictionary<String, Any>?) -> Data? {
-        let JSONArr:NSMutableArray = NSMutableArray()
-        if let params = parameters {
-            for key in params.keys {
-                let dictStr = "\(key)\("=")\(params[key] as! String)"
-                JSONArr.add(dictStr)
-            }
-            return JSONArr.componentsJoined(by: "&").data(using: .utf8)
-        }
-        return nil
     }
     
     func handleHttpError(error: Error?,
@@ -518,14 +496,15 @@ private extension Armin {
                          with: requestUrl)
             requestFail?(arError)
             return arError
-        } else if let _data = data,
-           let arError = _data.toArError() {
-            self.request(error: arError,
-                         of: event,
-                         with: requestUrl)
-            requestFail?(arError)
-            return arError
         }
+//        else if let _data = data,
+//           let arError = _data.toArError() {
+//            self.request(error: arError,
+//                         of: event,
+//                         with: requestUrl)
+//            requestFail?(arError)
+//            return arError
+//        }
         return nil
     }
 
