@@ -55,7 +55,11 @@ public extension Armin {
                  failRetry: ArErrorRetryCompletion = nil) {
         privateRequst(task: task,
                       responseOnMainQueue: responseOnMainQueue,
-                      success: success) { [unowned self] (error) in
+                      success: success) { [weak self] (error) in
+            guard let `self` = self else {
+                return
+            }
+            
             guard let eRetry = failRetry else {
                 self.removeWorker(of: task.event)
                 return
@@ -90,7 +94,11 @@ public extension Armin {
                 success: ArResponse? = nil,
                 failRetry: ArErrorRetryCompletion = nil) {
         privateUpload(task: task,
-                      success: success) { [unowned self] (error) in
+                      success: success) { [weak self] (error) in
+            guard let `self` = self else {
+                return
+            }
+            
             guard let eRetry = failRetry else {
                 self.removeWorker(of: task.event)
                 return
@@ -285,12 +293,20 @@ private extension Armin {
                                       closure: { (progress) in
                 })
                 
-                upload.responseData(queue: queue) { [unowned self] (dataResponse) in
+                upload.responseData(queue: queue) { [weak self] (dataResponse) in
+                    guard let `self` = self else {
+                        return
+                    }
+                    
                     self.removeInstance(taskId)
                     self.removeWorker(of: task.event)
                     
                     if responseOnMainQueue {
-                        DispatchQueue.main.async { [unowned self] in
+                        DispatchQueue.main.async { [weak self] in
+                            guard let `self` = self else {
+                                return
+                            }
+                            
                             self.handle(dataResponse: dataResponse,
                                         from: task,
                                         url: url,
@@ -593,7 +609,11 @@ private extension Armin {
     func requestSuccess(of event: ArRequestEvent,
                         startTime: TimeInterval,
                         with url: String) {
-        DispatchQueue.main.async { [unowned self] in
+        DispatchQueue.main.async { [weak self] in
+            guard let `self` = self else {
+                return
+            }
+            
             self.delegate?.armin(self,
                                  requestSuccess: event,
                                  startTime: startTime,
@@ -604,7 +624,11 @@ private extension Armin {
     func request(error: ArError,
                  of event: ArRequestEvent,
                  with url: String) {
-        DispatchQueue.main.async { [unowned self] in
+        DispatchQueue.main.async { [weak self] in
+            guard let `self` = self else {
+                return
+            }
+            
             self.delegate?.armin(self,
                                  requestFail: error,
                                  event: event,
@@ -617,7 +641,11 @@ private extension Armin {
 private extension Armin {
     func log(info: String,
              extra: String? = nil) {
-        DispatchQueue.main.async { [unowned self] in
+        DispatchQueue.main.async { [weak self] in
+            guard let `self` = self else {
+                return
+            }
+            
             self.logTube?.log(info: info,
                               extra: extra)
         }
@@ -625,7 +653,11 @@ private extension Armin {
     
     func log(warning: String,
              extra: String? = nil) {
-        DispatchQueue.main.async { [unowned self] in
+        DispatchQueue.main.async { [weak self] in
+            guard let `self` = self else {
+                return
+            }
+            
             self.logTube?.log(warning: warning,
                               extra: extra)
         }
@@ -633,7 +665,11 @@ private extension Armin {
     
     func log(error: ArError,
              extra: String? = nil) {
-        DispatchQueue.main.async { [unowned self] in
+        DispatchQueue.main.async { [weak self] in
+            guard let `self` = self else {
+                return
+            }
+            
             self.logTube?.log(error: error,
                               extra: extra)
         }
