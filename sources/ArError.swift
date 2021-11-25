@@ -11,6 +11,7 @@ public struct ArError: Error {
         case fail(String)
         case invalidParameter(String)
         case valueNil(String)
+        case serialization(String)
         case convert(String, String)
         case fileExists(String)
         case taskExists(Int)
@@ -23,6 +24,7 @@ public struct ArError: Error {
             case .fail(let reason):             description = "\(reason)"
             case .invalidParameter(let para):   description = "\(para)"
             case .valueNil(let para):           description = "\(para) nil"
+            case .serialization(let para):      description = "serialize \(para) fail"
             case .convert(let a, let b):        description = "\(a) converted to \(b) error"
             case .fileExists(let path):         description = "\(path) already exists"
             case .taskExists(let taskId):         description = "\(taskId) already exists"

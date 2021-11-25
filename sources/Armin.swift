@@ -29,6 +29,7 @@ open class Armin: NSObject, ArRequestAPIsProtocol {
     
     private let session: URLSession
     private let fileHandler = ArFileHandler()
+    private let requestMaker = ArRequestMaker()
     
     // String: ArRequestEvent name
     private lazy var afterWorkers = [String: AfterWorker]()
@@ -271,28 +272,29 @@ private extension Armin {
             return
         }
         
-        guard let urlStr = task.requestType.url,
-              let url = makeUrl(urlstr: urlStr,
-                                httpMethod: method,
-                                parameters: task.parameters) else {
-                  requestFail?(ArError(type: .valueNil("url")))
-                  return
+        guard let urlStr = task.requestType.url else {
+            requestFail?(ArError(type: .valueNil("url")))
+            return
         }
         
-        var request = URLRequest(url: url,
-                                 timeoutInterval: task.timeout.value)
-        
-        if task.requestType.httpMethod == .post {
-            request.makeBody(parameters: task.parameters)
+        var request: URLRequest?
+        do {
+            request = try requestMaker.makeRequest(urlstr: urlStr,
+                                                   timeout: task.timeout.value,
+                                                   method: method,
+                                                   headers: task.header,
+                                                   params: task.parameters)
+        }catch{
+            requestFail?(error as! ArError)
+            return
         }
         
-        if task.requestType.httpMethod == .put {
-            request.makeBody(parameters: task.parameters)
+        guard let `request` = request else {
+            requestFail?(ArError(type: .valueNil("request")))
+            return
         }
-        
-        let startTime = Date.timeIntervalSinceReferenceDate
-        request.httpMethod = method.stringValue
 
+        let startTime = Date.timeIntervalSinceReferenceDate
         let dataTask = session.dataTask(with: request) {[weak self] (data, response, error) in
             guard let `self` = self else {
                 return
@@ -327,9 +329,9 @@ private extension Armin {
                        requestFail: ArErrorCompletion) {
         let method = ArHttpMethod.post
         guard let urlStr = task.requestType.url,
-              let url = makeUrl(urlstr: urlStr,
-                                httpMethod: method,
-                                parameters: task.parameters) else {
+              let url = requestMaker.makeUrl(urlstr: urlStr,
+                                             httpMethod: method,
+                                             parameters: task.parameters) else {
                   requestFail?(ArError(type: .valueNil("url")))
                   return
         }
@@ -381,9 +383,9 @@ private extension Armin {
                          requestFail: ArErrorCompletion) {
         let method = ArHttpMethod.download
         guard let urlStr = task.requestType.url,
-              let url = makeUrl(urlstr: urlStr,
-                                httpMethod: method,
-                                parameters: task.parameters) else {
+              let url = requestMaker.makeUrl(urlstr: urlStr,
+                                             httpMethod: method,
+                                             parameters: task.parameters) else {
                   let arError = ArError(type: .valueNil("url"))
                   requestFail?(arError)
                   return
@@ -456,30 +458,6 @@ private extension Armin {
     func removeWorker(of event: ArRequestEvent) {
         afterWorkers.removeValue(forKey: event.name)
     }
-}
-
-// MARK: - data hanlde
-private extension Armin {
-    func makeUrl(urlstr: String,
-                 httpMethod: ArHttpMethod,
-                 parameters: Dictionary<String, Any>?) -> URL? {
-        var urlString = urlstr
-        switch httpMethod {
-        case .get,.head,.delete:
-            if let params = parameters {
-                let JSONArr:NSMutableArray = NSMutableArray()
-                for key in params.keys {
-                    let JSONString = ("\(key)\("=")\(params[key] as! String)")
-                    JSONArr.add(JSONString)
-                }
-                let paramStr = JSONArr.componentsJoined(by:"&")
-                urlString.append("?" + paramStr)
-            }
-        default:
-            break
-        }
-        return URL(string:urlString.urlEncoded())
-    }
     
     func handleHttpError(error: Error?,
                          data: Data?,
@@ -507,7 +485,6 @@ private extension Armin {
 //        }
         return nil
     }
-
 }
 
 // MARK: Log

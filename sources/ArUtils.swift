@@ -108,16 +108,25 @@ extension URLRequest {
     }
     
     // TODO: not work
-    mutating func makeBody(parameters: [String: Any]?) {
-        if let params = parameters {
-            let JSONArr = NSMutableArray()
-            for (k,v) in params {
-                let valueStr = toString(key: k,value: v)
-                JSONArr.add("\(k)\("=")\(valueStr)")
-            }
-            let data = JSONArr.componentsJoined(by: "&").data(using: .utf8)
-            self.httpBody = data
+    mutating func makeBody(httpMethod: ArHttpMethod,
+                           parameters: [String: Any]?) throws {
+        guard ![ArHttpMethod.get,
+               ArHttpMethod.head,
+               ArHttpMethod.delete].contains(httpMethod),
+              let params = parameters else {
+            return
         }
+        do {
+            let data = try JSONSerialization.data(withJSONObject: params,
+                                                  options: .prettyPrinted)
+            self.httpBody = data
+            
+            self.setValue("application/json",
+                          forHTTPHeaderField: "Content-Type")
+        } catch {
+            throw ArError(type: .serialization("params"))
+        }
+
     }
     
     // TODO: not work
@@ -133,8 +142,8 @@ extension URLRequest {
             let valueStr = toString(key: key,
                                     value: valueArr)
             dicStr = "\(key)\("=")\(valueStr)"
-        } else if let valueStr = value as? String {
-            dicStr = valueStr
+        } else {
+            dicStr = "\(value)"
         }
         return dicStr
     }
