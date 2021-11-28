@@ -48,13 +48,12 @@ class ArRequestMaker {
               let params = parameters else {
             return URL(string:urlString.urlEncoded())
         }
+        
+        guard let url = URL(string:urlString.urlEncoded()) else {
+            return nil
+        }
 
         let JSONArr: NSMutableArray = NSMutableArray()
-        if var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false), !parameters.isEmpty {
-            let percentEncodedQuery = (urlComponents.percentEncodedQuery.map { $0 + "&" } ?? "") + query(parameters)
-            urlComponents.percentEncodedQuery = percentEncodedQuery
-            urlRequest.url = urlComponents.url
-        }
 //        for key in params.keys {
 //            let JSONString = ("\(key)\("=")\(params[key] as! String)")
 //            JSONArr.add(JSONString)

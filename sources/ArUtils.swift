@@ -117,9 +117,12 @@ extension URLRequest {
             return
         }
         do {
-            let data = try JSONSerialization.data(withJSONObject: params,
+//            let bodyStr = params.asPercentEncodedString()
+//            let bodyData = bodyStr.data(using: .utf8)
+            let bodyData = try JSONSerialization.data(withJSONObject: params,
                                                   options: .prettyPrinted)
-            self.httpBody = data
+            
+            self.httpBody = bodyData
             
             self.setValue("application/json",
                           forHTTPHeaderField: "Content-Type")
@@ -127,25 +130,6 @@ extension URLRequest {
             throw ArError(type: .serialization("params"))
         }
 
-    }
-    
-    // TODO: not work
-    func toString(key: String,
-                  value: Any) -> String {
-        var dicStr = ""
-        if let valueDic = value as? [String: Any] {
-            for(k,v) in valueDic {
-                return toString(key: k,
-                                value: v)
-            }
-        } else if let valueArr  = value as? Array<Any> {
-            let valueStr = toString(key: key,
-                                    value: valueArr)
-            dicStr = "\(key)\("=")\(valueStr)"
-        } else {
-            dicStr = "\(value)"
-        }
-        return dicStr
     }
 }
 extension Data {
@@ -165,3 +149,37 @@ extension Date {
     }
 }
 
+extension Dictionary where Key == String, Value == Any {
+    public func asPercentEncodedString(parentKey: String? = nil) -> String {
+        return self.map { key, value in
+            var escapedKey = "\(key)".addingPercentEncoding(withAllowedCharacters: .urlQueryValueAllowed) ?? ""
+            if let `parentKey` = parentKey {
+                escapedKey = "\(parentKey)[\(escapedKey)]"
+            }
+
+            if let dict = value as? Dictionary<String,Any> {
+                return dict.asPercentEncodedString(parentKey: escapedKey)
+            } else if let array = value as? [CustomStringConvertible] {
+                return array.map { entry in
+                    let escapedValue = "\(entry)"
+                        .addingPercentEncoding(withAllowedCharacters: .urlQueryValueAllowed) ?? ""
+                    return "\(escapedKey)[]=\(escapedValue)"
+                }.joined(separator: "&")
+            } else {
+                let escapedValue = "\(value)".addingPercentEncoding(withAllowedCharacters: .urlQueryValueAllowed) ?? ""
+                return "\(escapedKey)=\(escapedValue)"
+            }
+        }
+        .joined(separator: "&")
+    }
+}
+
+extension CharacterSet {
+    static let urlQueryValueAllowed: CharacterSet = {
+        let generalDelimitersToEncode = ":#[]@" // does not include "?" or "/" due to RFC 3986 - Section 3.4
+        let subDelimitersToEncode = "!$&'()*+,;="
+        var allowed = CharacterSet.urlQueryAllowed
+        allowed.remove(charactersIn: "\(generalDelimitersToEncode)\(subDelimitersToEncode)")
+        return allowed
+    }()
+}
