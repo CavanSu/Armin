@@ -11,6 +11,8 @@ Pod::Spec.new do |spec|
 
   spec.source_files  = "sources/*.{h,m,swift}","sources/private/*.{h,m,swift}"
   
+  #spec.static_framework = true
+  
   spec.module_name   = 'Armin'
   spec.swift_versions = ['5.0', '5.1', '5.2', '5.3', '5.4']
   spec.xcconfig = { 'BUILD_LIBRARY_FOR_DISTRIBUTION' => 'YES' }

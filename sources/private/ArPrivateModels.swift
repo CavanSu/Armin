@@ -19,7 +19,7 @@ struct ArTaskHandler {
     var requestFail: ArErrorCompletion
 }
 
-struct MultipartFormDataRequest {
+struct ArMultipartFormDataRequest {
     private let boundary: String = UUID().uuidString
     private var httpBody = NSMutableData()
     
@@ -65,7 +65,7 @@ struct MultipartFormDataRequest {
 }
 
 // MARK: - private
-extension MultipartFormDataRequest {
+extension ArMultipartFormDataRequest {
     private func textFormField(named name: String,
                                value: String) -> String {
         var fieldString = "--\(boundary)\r\n"
