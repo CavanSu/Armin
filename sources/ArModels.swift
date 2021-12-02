@@ -160,9 +160,9 @@ public struct ArDownloadObject: CustomStringConvertible {
     public var targetDirectory: String
     public var cover: Bool
     
-    public init(folderPath: String,
+    public init(targetDirectory: String,
                 cover: Bool = true) {
-        self.targetDirectory = folderPath
+        self.targetDirectory = targetDirectory
         self.cover = cover
     }
     
@@ -422,6 +422,48 @@ fileprivate struct TaskId {
     @objc public init(event: ArRequestEventOC,
                       timeout: TimeInterval,
                       object: ArUploadObjectOC,
+                      url: String,
+                      header: [String: String]? = nil,
+                      parameters: [String: Any]? = nil) {
+        TaskId.value += 1
+        self.id = TaskId.value
+        self.url = url
+        self.object = object
+        self.requestType = .http(.post,
+                                 url: url)
+        self.event = event
+        
+        self.timeout = timeout
+        self.header = header
+        self.parameters = parameters
+    }
+}
+
+@objc public class ArDownloadObjectOC: NSObject {
+    @objc public var targetDirectory: String
+    @objc public var cover: Bool
+
+    @objc public init(targetDirectory: String,
+                      cover: Bool) {
+        self.targetDirectory = targetDirectory
+        self.cover = cover
+    }
+}
+
+@objc public class ArDownloadTaskOC: NSObject {
+    @objc public private(set) var id: Int
+    @objc public var event: ArRequestEventOC
+    @objc public var timeout: TimeInterval
+    @objc public var url: String
+    @objc public var header: [String : String]?
+    @objc public var parameters: [String : Any]?
+    @objc public var object: ArDownloadObjectOC
+    
+    public private(set) var requestType: ArRequestType
+    
+    @objc public init(event: ArRequestEventOC,
+                      timeout: TimeInterval,
+                      object: ArDownloadObjectOC,
                       url: String,
                       header: [String: String]? = nil,
                       parameters: [String: Any]? = nil) {

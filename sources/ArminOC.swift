@@ -42,40 +42,8 @@
                               fail: ArErrorRetryCompletionOC = nil) {
         let swift_task = ArRequestTask.oc(task)
         
-        var response: ArResponse
-        
-        switch successCallbackContent {
-        case .json:
-            response = ArResponse.json({ (json) in
-                let response_oc = ArResponseOC(type: successCallbackContent,
-                                               json: json,
-                                               data: nil)
-                
-                if let success = success {
-                    success(response_oc)
-                }
-            })
-        case .data:
-            response = ArResponse.data({ (data) in
-                let response_oc = ArResponseOC(type: successCallbackContent,
-                                               json: nil,
-                                               data: data)
-                
-                if let success = success {
-                    success(response_oc)
-                }
-            })
-        case .blank:
-            response = ArResponse.blank({
-                let response_oc = ArResponseOC(type: successCallbackContent,
-                                               json: nil,
-                                               data: nil)
-                
-                if let success = success {
-                    success(response_oc)
-                }
-            })
-        }
+        var response = successFromOC(successCallbackContent: successCallbackContent,
+                                      success: success)
         
         request(task: swift_task,
                 responseOnQueue: responseOnQueue,
@@ -100,10 +68,75 @@
     }
     
     @objc public func upload(task: ArUploadTaskOC,
-                             responseOnQueue:DispatchQueue?,
+                             responseOnQueue: DispatchQueue?,
                              successCallbackContent: ArResponseTypeOC,
                              success: ((ArResponseOC) -> Void)? = nil,
                              fail: ArErrorRetryCompletionOC = nil) {
+        var response = successFromOC(successCallbackContent: successCallbackContent,
+                                      success: success)
+        
+        let swift_task = ArUploadTask.oc(task)
+        
+        upload(task: swift_task,
+               responseOnQueue: responseOnQueue,
+               success: response) { (error) -> ArRetryOptions in
+            if let fail = fail {
+                let swift_error = error
+                let oc_error = ArErrorOC(domain: swift_error.localizedDescription,
+                                         code: swift_error.code ?? -1,
+                                         userInfo: nil)
+                oc_error.reposeData = swift_error.responseData
+                let failRetryInterval = fail(oc_error);
+                
+                if failRetryInterval > 0 {
+                    return .retry(after: failRetryInterval)
+                } else {
+                    return .resign
+                }
+            } else {
+                return .resign
+            }
+        }
+    }
+    
+    @objc public func download(task: ArDownloadTaskOC,
+                             responseOnQueue: DispatchQueue?,
+                             successCallbackContent: ArResponseTypeOC,
+                             progress: ((_ progress: Float) -> Void)? = nil,
+                             success: ((ArResponseOC) -> Void)? = nil,
+                             fail: ArErrorRetryCompletionOC = nil) {
+        var response = successFromOC(successCallbackContent: successCallbackContent,
+                                      success: success)
+        
+        let swift_task = ArDownloadTask.oc(task)
+        download(task: <#T##ArDownloadTaskProtocol#>, responseOnQueue: <#T##DispatchQueue?#>, progress: <#T##ArDownloadProgress##ArDownloadProgress##(_ progress: Float) -> Void#>, success: <#T##ArResponse?#>, failRetry: <#T##ArErrorRetryCompletion##ArErrorRetryCompletion##(ArError) -> ArRetryOptions#>)
+        download(task: swift_task,
+                 responseOnQueue: responseOnQueue,
+                 progress: progress,
+                 success: response) { (error) -> ArRetryOptions in
+            if let fail = fail {
+                let swift_error = error
+                let oc_error = ArErrorOC(domain: swift_error.localizedDescription,
+                                         code: swift_error.code ?? -1,
+                                         userInfo: nil)
+                oc_error.reposeData = swift_error.responseData
+                let failRetryInterval = fail(oc_error);
+                
+                if failRetryInterval > 0 {
+                    return .retry(after: failRetryInterval)
+                } else {
+                    return .resign
+                }
+            } else {
+                return .resign
+            }
+        }
+    }
+}
+
+private extension ArminOC {
+    func successFromOC(successCallbackContent: ArResponseTypeOC,
+                        success: ((ArResponseOC) -> Void)? = nil) -> ArResponse {
         var response: ArResponse
         
         switch successCallbackContent {
@@ -139,28 +172,11 @@
             })
         }
         
-        let swift_task = ArUploadTask.oc(task)
-        
-        upload(task: swift_task,
-               responseOnQueue: responseOnQueue,
-               success: response) { (error) -> ArRetryOptions in
-            if let fail = fail {
-                let swift_error = error
-                let oc_error = ArErrorOC(domain: swift_error.localizedDescription,
-                                         code: swift_error.code ?? -1,
-                                         userInfo: nil)
-                oc_error.reposeData = swift_error.responseData
-                let failRetryInterval = fail(oc_error);
-                
-                if failRetryInterval > 0 {
-                    return .retry(after: failRetryInterval)
-                } else {
-                    return .resign
-                }
-            } else {
-                return .resign
-            }
-        }
+        return response
+    }
+    
+    func failFromOC(fail: ArErrorRetryCompletionOC?) -> ArErrorRetryCompletion {
+//        let retryCompletion = 
     }
 }
 
@@ -290,6 +306,22 @@ fileprivate extension ArUploadTask {
                                       url: item.url,
                                       header: item.header,
                                       parameters: item.header)
+        return swift_task
+    }
+}
+
+fileprivate extension ArDownloadTask {
+    static func oc(_ item: ArDownloadTaskOC) -> ArDownloadTask {
+        let swift_object = ArDownloadObject(targetDirectory: item.object.targetDirectory,
+                                            cover: item.object.cover)
+        let swift_event = ArRequestEvent(name: item.event.name)
+
+        let swift_task = ArDownloadTask(event: swift_event,
+                                        timeout: .custom(item.timeout),
+                                        object: swift_object,
+                                        url: item.url,
+                                        header: item.header,
+                                        parameters: item.header)
         return swift_task
     }
 }
