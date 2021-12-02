@@ -327,25 +327,30 @@ private extension Armin {
                        responseOnQueue: DispatchQueue,
                        success: ArResponse?,
                        requestFail: ArErrorCompletion) {
-        let method = ArHttpMethod.post
-        guard let urlStr = task.requestType.url,
-              let url = requestMaker.makeUrl(urlstr: urlStr,
-                                             httpMethod: method,
-                                             parameters: task.parameters) else {
+        guard let urlStr = task.requestType.url else {
                   requestFail?(ArError(type: .valueNil("url")))
                   return
         }
         
         let startTime = Date.timeIntervalSinceReferenceDate
-
-        let multiRequest = MultipartFormDataRequest(method: method,
-                                                    url: url,
-                                                    timeout: task.timeout)
         
-        multiRequest.addDataField(named: task.object.fileName,
-                                  data: task.object.fileData,
-                                  mimeType: task.object.mime.text)
-        let uploadTask = session.dataTask(with: multiRequest.toURLRequest()) {[weak self] (data, response, error) in
+        var request: URLRequest?
+        do {
+            let request = try requestMaker.makeDataRequest(urlstr: urlStr,
+                                                           timeout: task.timeout.value,
+                                                           params: task.parameters,
+                                                           uploadObject: task.object)
+        }catch{
+            requestFail?(error as! ArError)
+            return
+        }
+        
+        guard let `request` = request else {
+            requestFail?(ArError(type: .valueNil("request")))
+            return
+        }
+        
+        let uploadTask = session.dataTask(with: request) {[weak self] (data, response, error) in
             guard let `self` = self else {
                 return
             }

@@ -38,6 +38,29 @@ class ArRequestMaker {
         return request
     }
     
+    func makeDataRequest(urlstr: String,
+                         timeout: TimeInterval,
+                         params: [String: Any]?,
+                         uploadObject: ArUploadObject) throws -> URLRequest {
+        let method = ArHttpMethod.post
+        
+        // url
+        guard let url = makeUrl(urlstr: urlstr,
+                                httpMethod: method,
+                                parameters: params) else {
+            throw ArError(type: .invalidParameter("params"))
+        }
+        
+        let multiRequest = ArMultipartFormDataRequest(method: method,
+                                                      url: url,
+                                                      timeout: .custom(timeout))
+        
+        multiRequest.addDataField(named: uploadObject.fileName,
+                                  data: uploadObject.fileData,
+                                  mimeType: uploadObject.mime.text)
+        return multiRequest.toURLRequest()
+    }
+    
     func makeUrl(urlstr: String,
                  httpMethod: ArHttpMethod,
                  parameters: Dictionary<String, Any>?) -> URL? {
