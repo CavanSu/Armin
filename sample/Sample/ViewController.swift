@@ -18,7 +18,7 @@ class ViewController: UIViewController {
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        downloadRequest()
+        get()
     }
     
     func getRequest() {
@@ -69,7 +69,7 @@ class ViewController: UIViewController {
     func downloadRequest() {
         let urlStr = "https://convertcdn.netless.link/publicFiles.zip"
         let event = ArRequestEvent(name: "download-image")
-        let obj = ArDownloadObject(folderPath: "/Users/doublecircle/Desktop/Armin_local")
+        let obj = ArDownloadObject(targetDirectory: "/Users/doublecircle/Desktop/Armin_local")
         let task = ArDownloadTask(event: event,
                                   object: obj,
                                   url: urlStr)

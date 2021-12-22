@@ -40,7 +40,7 @@
                                                                      @"callback": @"0"}];
     
     [self.client requestWithTask:task
-             responseOnMainQueue:YES
+             responseOnQueue:nil
           successCallbackContent:ArResponseTypeOCJson
                          success:^(ArResponseOC * _Nonnull response) {
         NSLog(@"weather json: %@", response.json);
@@ -63,7 +63,7 @@
                                                         parameters:nil];
     
     [self.client requestWithTask:task
-             responseOnMainQueue:YES
+                 responseOnQueue:nil
           successCallbackContent:ArResponseTypeOCJson
                          success:^(ArResponseOC * _Nonnull response) {
         NSLog(@"weather json: %@", response.json);
@@ -89,11 +89,36 @@
                                                       parameters:nil];
     
     [self.client uploadWithTask:task
-            responseOnMainQueue:YES
+                responseOnQueue:nil
          successCallbackContent:ArResponseTypeOCBlank
                         success:^(ArResponseOC * _Nonnull response) {
         NSLog(@"upload success");
     } fail:^NSTimeInterval(ArErrorOC * _Nonnull error) {
+        NSLog(@"error: %@", error.localizedDescription);
+        return -1;
+    }];
+}
+
+- (void)downloadTask {
+    NSString *url = @"";
+    ArRequestEventOC *event = [[ArRequestEventOC alloc] initWithName:@"Sample-Download"];
+    ArDownloadObjectOC *object = [[ArDownloadObjectOC alloc] initWithTargetDirectory:@""
+                                                                               cover:YES];
+    ArDownloadTaskOC *task = [[ArDownloadTaskOC alloc] initWithEvent:event
+                                                             timeout:10
+                                                              object:object
+                                                                 url:url
+                                                              header:nil
+                                                          parameters:nil];
+    
+    [self.client downloadWithTask:task
+                  responseOnQueue:nil
+           successCallbackContent:ArResponseTypeOCJson
+                         progress:^(float progress) {
+        NSLog(@"%f",progress);
+    } success:^(ArResponseOC * response) {
+        NSLog(@"download success");
+    } fail:^NSTimeInterval(ArErrorOC * error) {
         NSLog(@"error: %@", error.localizedDescription);
         return -1;
     }];

@@ -42,29 +42,13 @@
                               fail: ArErrorRetryCompletionOC = nil) {
         let swift_task = ArRequestTask.oc(task)
         
-        var response = successFromOC(successCallbackContent: successCallbackContent,
+        let response = successFromOC(successCallbackContent: successCallbackContent,
                                       success: success)
         
         request(task: swift_task,
                 responseOnQueue: responseOnQueue,
-                success: response) { (error) -> ArRetryOptions in
-            if let fail = fail {
-                let swift_error = error
-                let oc_error = ArErrorOC(domain: swift_error.localizedDescription,
-                                         code: swift_error.code ?? -1,
-                                         userInfo: nil)
-                oc_error.reposeData = swift_error.responseData
-                let failRetryInterval = fail(oc_error);
-                
-                if failRetryInterval > 0 {
-                    return .retry(after: failRetryInterval)
-                } else {
-                    return .resign
-                }
-            } else {
-                return .resign
-            }
-        }
+                success: response,
+                failRetry: failFromOC(fail: fail))
     }
     
     @objc public func upload(task: ArUploadTaskOC,
@@ -72,65 +56,32 @@
                              successCallbackContent: ArResponseTypeOC,
                              success: ((ArResponseOC) -> Void)? = nil,
                              fail: ArErrorRetryCompletionOC = nil) {
-        var response = successFromOC(successCallbackContent: successCallbackContent,
-                                      success: success)
-        
         let swift_task = ArUploadTask.oc(task)
+        
+        let response = successFromOC(successCallbackContent: successCallbackContent,
+                                      success: success)
         
         upload(task: swift_task,
                responseOnQueue: responseOnQueue,
-               success: response) { (error) -> ArRetryOptions in
-            if let fail = fail {
-                let swift_error = error
-                let oc_error = ArErrorOC(domain: swift_error.localizedDescription,
-                                         code: swift_error.code ?? -1,
-                                         userInfo: nil)
-                oc_error.reposeData = swift_error.responseData
-                let failRetryInterval = fail(oc_error);
-                
-                if failRetryInterval > 0 {
-                    return .retry(after: failRetryInterval)
-                } else {
-                    return .resign
-                }
-            } else {
-                return .resign
-            }
-        }
+               success: response,
+               failRetry: failFromOC(fail: fail))
     }
     
     @objc public func download(task: ArDownloadTaskOC,
-                             responseOnQueue: DispatchQueue?,
-                             successCallbackContent: ArResponseTypeOC,
-                             progress: ((_ progress: Float) -> Void)? = nil,
-                             success: ((ArResponseOC) -> Void)? = nil,
-                             fail: ArErrorRetryCompletionOC = nil) {
-        var response = successFromOC(successCallbackContent: successCallbackContent,
-                                      success: success)
+                               responseOnQueue: DispatchQueue?,
+                               successCallbackContent: ArResponseTypeOC,
+                               progress: ((_ progress: Float) -> Void)? = nil,
+                               success: ((ArResponseOC) -> Void)? = nil,
+                               fail: ArErrorRetryCompletionOC = nil) {
+        let response = successFromOC(successCallbackContent: successCallbackContent,
+                                     success: success)
         
         let swift_task = ArDownloadTask.oc(task)
-        download(task: <#T##ArDownloadTaskProtocol#>, responseOnQueue: <#T##DispatchQueue?#>, progress: <#T##ArDownloadProgress##ArDownloadProgress##(_ progress: Float) -> Void#>, success: <#T##ArResponse?#>, failRetry: <#T##ArErrorRetryCompletion##ArErrorRetryCompletion##(ArError) -> ArRetryOptions#>)
         download(task: swift_task,
                  responseOnQueue: responseOnQueue,
                  progress: progress,
-                 success: response) { (error) -> ArRetryOptions in
-            if let fail = fail {
-                let swift_error = error
-                let oc_error = ArErrorOC(domain: swift_error.localizedDescription,
-                                         code: swift_error.code ?? -1,
-                                         userInfo: nil)
-                oc_error.reposeData = swift_error.responseData
-                let failRetryInterval = fail(oc_error);
-                
-                if failRetryInterval > 0 {
-                    return .retry(after: failRetryInterval)
-                } else {
-                    return .resign
-                }
-            } else {
-                return .resign
-            }
-        }
+                 success: response,
+                 failRetry: failFromOC(fail: fail))
     }
 }
 
@@ -175,8 +126,27 @@ private extension ArminOC {
         return response
     }
     
-    func failFromOC(fail: ArErrorRetryCompletionOC?) -> ArErrorRetryCompletion {
-//        let retryCompletion = 
+    func failFromOC(fail: ArErrorRetryCompletionOC) -> ArErrorRetryCompletion {
+        func retryCompletion(error: ArError) -> ArRetryOptions {
+            if let failBlock = fail {
+                let swift_error = error
+                let oc_error = ArErrorOC(domain: swift_error.localizedDescription,
+                                         code: swift_error.code ?? -1,
+                                         userInfo: nil)
+                oc_error.reposeData = swift_error.responseData
+                let failRetryInterval = failBlock(oc_error);
+                
+                if failRetryInterval > 0 {
+                    return .retry(after: failRetryInterval)
+                } else {
+                    return .resign
+                }
+            } else {
+                return .resign
+            }
+        }
+        
+        return retryCompletion(error:)
     }
 }
 
