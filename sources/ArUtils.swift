@@ -7,7 +7,7 @@
 //
 
 struct OptionsDescription {
-    static func any<any>(_ any: any?) -> String where any: CustomStringConvertible {
+    static func any<T>(_ any: T?) -> String where T : CustomStringConvertible {
         return any != nil ? any!.description : "nil"
     }
 }
