@@ -8,6 +8,8 @@ target 'Sample' do
 
   # Pods for Sample
   pod 'Armin', :path => '../'
+  #pod 'Alamofire', '5.6.1'
+  #pod 'Alamofire', '4.7.3'
 end
 
 target 'Sample-Mac' do
@@ -29,5 +31,4 @@ target 'Sample-OC' do
 
   # Pods for Sample
   pod 'Armin', :path => '../'
-  pod 'Alamofire', '4.7.3'
 end
