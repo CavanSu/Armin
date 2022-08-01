@@ -6,8 +6,6 @@
 //  Copyright © 2019 CavanSu. All rights reserved.
 //
 
-import Alamofire
-
 public protocol ArminDelegate: NSObjectProtocol {
     func armin(_ client: Armin,
                requestSuccess event: ArRequestEvent,
@@ -432,7 +430,7 @@ private extension Armin {
         configuration.httpAdditionalHeaders = SessionManager.defaultHTTPHeaders
         configuration.timeoutIntervalForRequest = timeout
         
-        let alamo = Alamofire.SessionManager(configuration: configuration)
+        let alamo = SessionManager(configuration: configuration)
         instances[id] = alamo
         return alamo
     }
@@ -604,7 +602,7 @@ private extension Armin {
     }
 }
 
-// MARK: CallbArk
+// MARK: Callback
 private extension Armin {
     func requestSuccess(of event: ArRequestEvent,
                         startTime: TimeInterval,
