@@ -6,28 +6,64 @@
 //  Copyright © 2020 CavanSu. All rights reserved.
 //
 
-struct OptionsDescription {
-    static func any<T>(_ any: T?) -> String where T : CustomStringConvertible {
-        return any != nil ? any!.description : "nil"
+public typealias ArDataExCompletion = ((Data) throws -> Void)
+public typealias ArJsonExCompletion = (([String: Any]) throws -> Void)
+public typealias ArExCompletion = (() throws -> Void)
+
+public typealias ArDataCompletion = ((Data) -> Void)
+public typealias ArJsonCompletion = (([String: Any]) -> Void)
+public typealias ArCompletion = (() -> Void)
+
+public typealias ArErrorCompletion = (Error) -> (Void)
+
+public enum ArSuccessCompletion {
+    case json(ArJsonExCompletion), data(ArDataExCompletion), blank(ArExCompletion)
+}
+
+public enum ArRequestTimeout {
+    case low, medium, high, custom(TimeInterval)
+    
+    public var value: TimeInterval {
+        switch self {
+        case .low:               return 20
+        case .medium:            return 10
+        case .high:              return 3
+        case .custom(let value): return value
+        }
     }
 }
 
-class AfterWorker {
-    private var pendingRequestWorkItem: DispatchWorkItem?
+@objc public protocol ArLogTube: NSObjectProtocol {
+    func log(info: String,
+             extra: String?)
+    func log(warning: String,
+             extra: String?)
+    func log(error: Error,
+             extra: String?)
+}
+
+@objc public enum ArHttpMethod: Int {
+    case options
+    case get
+    case head
+    case post
+    case put
+    case patch
+    case delete
+    case trace
+    case connect
     
-    func perform(after: TimeInterval,
-                 on queue: DispatchQueue,
-                 _ block: @escaping (() -> Void)) {
-        // Cancel the currently pending item
-        pendingRequestWorkItem?.cancel()
-        
-        // Wrap our request in a work item
-        let requestWorkItem = DispatchWorkItem(block: block)
-        pendingRequestWorkItem = requestWorkItem
-        queue.asyncAfter(deadline: .now() + after, execute: requestWorkItem)
-    }
-    
-    func cancel() {
-        pendingRequestWorkItem?.cancel()
+    var stringValue: String {
+        switch self {
+        case .options: return "OPTIONS"
+        case .get    : return "GET"
+        case .head   : return "HEAD"
+        case .post   : return "POST"
+        case .put    : return "PUT"
+        case .patch  : return "PATCH"
+        case .delete : return "DELETE"
+        case .trace  : return "TRACE"
+        case .connect: return "CONNECT"
+        }
     }
 }

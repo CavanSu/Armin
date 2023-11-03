@@ -7,9 +7,7 @@ target 'Sample' do
   platform :ios, '13.2'
 
   # Pods for Sample
-  pod 'Armin', :path => '../'
-  #pod 'Alamofire', '5.6.1'
-  #pod 'Alamofire', '4.7.3'
+  pod 'Armin', :path => '../Armin.podspec'
 end
 
 target 'Sample-Mac' do
@@ -19,7 +17,7 @@ target 'Sample-Mac' do
   platform :osx, '10.15'
 
   # Pods for Sample
-  pod 'Armin', :path => '../'
+  pod 'Armin', :path => '../Armin.podspec'
 end
 
 
@@ -30,5 +28,5 @@ target 'Sample-OC' do
   platform :ios, '13.2'
 
   # Pods for Sample
-  pod 'Armin', :path => '../'
+  pod 'Armin', :path => '../Armin.podspec'
 end
