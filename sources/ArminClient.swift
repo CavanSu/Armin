@@ -22,15 +22,15 @@ import Foundation
     }
     
     @objc public func objc_request(url: String,
-                              headers: [String: String]?,
-                              parameters: [String: Any]?,
-                              method: ArHttpMethod,
-                              event: String,
-                              timeout: TimeInterval,
-                              responseQueue: DispatchQueue,
-                              retryCount: Int,
-                              jsonSuccess: ArJsonCompletion?,
-                              failure: ArErrorCompletion?) {
+                                   headers: [String: String]?,
+                                   parameters: [String: Any]?,
+                                   method: ArHttpMethod,
+                                   event: String,
+                                   timeout: TimeInterval,
+                                   responseQueue: DispatchQueue,
+                                   retryCount: Int,
+                                   jsonSuccess: ArJsonCompletion?,
+                                   failure: ArErrorCompletion?) {
         let closure = ArSuccessCompletion.json { json in
             jsonSuccess?(json)
         }
@@ -48,15 +48,15 @@ import Foundation
     }
     
     @objc public func objc_request(url: String,
-                              headers: [String: String]?,
-                              parameters: [String: Any]?,
-                              method: ArHttpMethod,
-                              event: String,
-                              timeout: TimeInterval,
-                              responseQueue: DispatchQueue,
-                              retryCount: Int,
-                              dataSuccess: ArDataCompletion?,
-                              failure: ArErrorCompletion?) {
+                                   headers: [String: String]?,
+                                   parameters: [String: Any]?,
+                                   method: ArHttpMethod,
+                                   event: String,
+                                   timeout: TimeInterval,
+                                   responseQueue: DispatchQueue,
+                                   retryCount: Int,
+                                   dataSuccess: ArDataCompletion?,
+                                   failure: ArErrorCompletion?) {
         let closure = ArSuccessCompletion.data { data in
             dataSuccess?(data)
         }
@@ -74,15 +74,15 @@ import Foundation
     }
     
     @objc public func objc_request(url: String,
-                              headers: [String: String]?,
-                              parameters: [String: Any]?,
-                              method: ArHttpMethod,
-                              event: String,
-                              timeout: TimeInterval,
-                              responseQueue: DispatchQueue,
-                              retryCount: Int,
-                              success: ArCompletion?,
-                              failure: ArErrorCompletion?) {
+                                   headers: [String: String]?,
+                                   parameters: [String: Any]?,
+                                   method: ArHttpMethod,
+                                   event: String,
+                                   timeout: TimeInterval,
+                                   responseQueue: DispatchQueue,
+                                   retryCount: Int,
+                                   success: ArCompletion?,
+                                   failure: ArErrorCompletion?) {
         let closure = ArSuccessCompletion.blank {
             success?()
         }
@@ -97,10 +97,6 @@ import Foundation
                 retryCount: retryCount,
                 success: closure,
                 failure: failure)
-    }
-    
-    public func test() {
-        
     }
     
     public func request(url: String,
@@ -139,18 +135,186 @@ import Foundation
         }
     }
     
-    private func privateRequest(session: SessionManager,
-                                retry: ArRetryHelper?,
-                                url: String,
-                                headers: [String: String]? = nil,
-                                parameters: [String: Any]? = nil,
-                                method: ArHttpMethod,
-                                event: String,
-                                timeout: ArRequestTimeout = .medium,
-                                responseQueue: DispatchQueue = .main,
-                                success: ArSuccessCompletion? = nil,
-                                failure: ArErrorCompletion? = nil,
-                                completion: @escaping ArExCompletion) {
+    @objc public func objc_upload(fileURL: URL,
+                                  to url: String,
+                                  headers: [String: String]?,
+                                  method: ArHttpMethod,
+                                  event: String,
+                                  timeout: TimeInterval,
+                                  responseQueue: DispatchQueue,
+                                  retryCount: Int,
+                                  jsonSuccess: ArJsonCompletion?,
+                                  failure: ArErrorCompletion?) {
+        let closure = ArSuccessCompletion.json { json in
+            jsonSuccess?(json)
+        }
+        
+        upload(fileURL: fileURL,
+               to: url,
+               method: method,
+               event: event,
+               timeout: .custom(timeout),
+               responseQueue: responseQueue,
+               retryCount: retryCount,
+               success: closure,
+               failure: failure)
+    }
+    
+    @objc public func objc_upload(fileURL: URL,
+                                  to url: String,
+                                  headers: [String: String]?,
+                                  method: ArHttpMethod,
+                                  event: String,
+                                  timeout: TimeInterval,
+                                  responseQueue: DispatchQueue,
+                                  retryCount: Int,
+                                  dataSuccess: ArDataCompletion?,
+                                  failure: ArErrorCompletion?) {
+        let closure = ArSuccessCompletion.data { data in
+            dataSuccess?(data)
+        }
+        
+        upload(fileURL: fileURL,
+               to: url,
+               method: method,
+               event: event,
+               timeout: .custom(timeout),
+               responseQueue: responseQueue,
+               retryCount: retryCount,
+               success: closure,
+               failure: failure)
+    }
+    
+    @objc public func objc_upload(fileURL: URL,
+                                  to url: String,
+                                  headers: [String: String]?,
+                                  method: ArHttpMethod,
+                                  event: String,
+                                  timeout: TimeInterval,
+                                  responseQueue: DispatchQueue,
+                                  retryCount: Int,
+                                  success: ArCompletion?,
+                                  failure: ArErrorCompletion?) {
+        let closure = ArSuccessCompletion.blank {
+            success?()
+        }
+        
+        upload(fileURL: fileURL,
+               to: url,
+               method: method,
+               event: event,
+               timeout: .custom(timeout),
+               responseQueue: responseQueue,
+               retryCount: retryCount,
+               success: closure,
+               failure: failure)
+    }
+    
+    public func upload(fileURL: URL,
+                       to url: String,
+                       headers: [String: String]? = nil,
+                       method: ArHttpMethod,
+                       event: String,
+                       timeout: ArRequestTimeout = .medium,
+                       responseQueue: DispatchQueue = .main,
+                       retryCount: Int = 0,
+                       success: ArSuccessCompletion? = nil,
+                       failure: ArErrorCompletion? = nil) {
+        taskId += 1
+        
+        let sessionId = "\(event)-\(taskId)"
+        
+        let session = addSession(timeout: timeout.value,
+                                 id: sessionId)
+        
+        let retry = addRetryHelper(id: sessionId,
+                                   count: retryCount)
+        
+        privateUpload(session: session,
+                      retry: retry,
+                      fileURL: fileURL,
+                      to: url,
+                      headers: headers,
+                      method: method,
+                      event: event,
+                      timeout: timeout,
+                      responseQueue: responseQueue,
+                      success: success,
+                      failure: failure) { [weak self] in
+            self?.removeSession(id: sessionId)
+            self?.removeRetryHelper(id: sessionId)
+        }
+    }
+}
+
+private extension ArminClient {
+    func privateUpload(session: SessionManager,
+                       retry: ArRetryHelper?,
+                       fileURL: URL,
+                       to url: String,
+                       headers: [String: String]? = nil,
+                       method: ArHttpMethod,
+                       event: String,
+                       timeout: ArRequestTimeout = .medium,
+                       responseQueue: DispatchQueue = .main,
+                       success: ArSuccessCompletion? = nil,
+                       failure: ArErrorCompletion? = nil,
+                       completion: @escaping ArExCompletion) {
+        var extra = "url: \(url)"
+        extra += ", headers: \(optionalDescription(headers))"
+        
+        log(info: "http upload, event: \(event)",
+            extra: extra)
+        
+        let queue = responseQueue
+        
+        let request = session.upload(fileURL,
+                                     to: url,
+                                     method: method.alType,
+                                     headers: headers)
+        
+        request.responseData(queue: queue) { [weak self] (dataResponse) in
+            guard let strongSelf = self else {
+                return
+            }
+            
+            strongSelf.handleResponse(response: dataResponse,
+                                      url: url,
+                                      event: event,
+                                      success: success) { [weak retry] error in
+                
+                if let `retry` = retry, retry.ifNeedRetry() {
+                    retry.perform { [weak self, weak retry] in
+                        self?.privateUpload(session: session,
+                                            retry: retry,
+                                            fileURL: fileURL,
+                                            to: url,
+                                            headers: headers,
+                                            method: method,
+                                            event: event,
+                                            success: success,
+                                            failure: failure,
+                                            completion: completion)
+                    }
+                } else {
+                    failure?(error)
+                }
+            }
+        }
+    }
+    
+    func privateRequest(session: SessionManager,
+                        retry: ArRetryHelper?,
+                        url: String,
+                        headers: [String: String]? = nil,
+                        parameters: [String: Any]? = nil,
+                        method: ArHttpMethod,
+                        event: String,
+                        timeout: ArRequestTimeout = .medium,
+                        responseQueue: DispatchQueue = .main,
+                        success: ArSuccessCompletion? = nil,
+                        failure: ArErrorCompletion? = nil,
+                        completion: @escaping ArExCompletion) {
         var extra = "url: \(url)"
         extra += ", headers: \(optionalDescription(headers))"
         extra += ", parameters: \(optionalDescription(parameters))"
@@ -167,42 +331,40 @@ import Foundation
                                     headers: headers)
         
         request.responseData(queue: queue) { [weak self] (dataResponse) in
-            queue.async { [weak self] in
-                guard let strongSelf = self else {
-                    return
-                }
+            guard let strongSelf = self else {
+                return
+            }
+            
+            strongSelf.handleResponse(response: dataResponse,
+                                      url: url,
+                                      event: event,
+                                      success: success) { [weak retry] error in
                 
-                strongSelf.handleResponse(response: dataResponse,
-                                          url: url,
-                                          event: event,
-                                          success: success) { [weak retry] error in
-                    
-                    if let `retry` = retry, retry.ifNeedRetry() {
-                        retry.perform { [weak self, weak retry] in
-                            self?.privateRequest(session: session,
-                                                 retry: retry,
-                                                 url: url,
-                                                 headers: headers,
-                                                 parameters: parameters,
-                                                 method: method,
-                                                 event: event,
-                                                 success: success,
-                                                 failure: failure,
-                                                 completion: completion)
-                        }
-                    } else {
-                        failure?(error)
+                if let `retry` = retry, retry.ifNeedRetry() {
+                    retry.perform { [weak self, weak retry] in
+                        self?.privateRequest(session: session,
+                                             retry: retry,
+                                             url: url,
+                                             headers: headers,
+                                             parameters: parameters,
+                                             method: method,
+                                             event: event,
+                                             success: success,
+                                             failure: failure,
+                                             completion: completion)
                     }
+                } else {
+                    failure?(error)
                 }
             }
         }
     }
     
-    private func createRequest(session: SessionManager,
-                               method: ArHttpMethod,
-                               url: String,
-                               parameters: [String: Any]?,
-                               headers: [String: String]?) -> DataRequest {
+    func createRequest(session: SessionManager,
+                       method: ArHttpMethod,
+                       url: String,
+                       parameters: [String: Any]?,
+                       headers: [String: String]?) -> DataRequest {
         var dataRequest: DataRequest
         
         if method == .get {
@@ -228,10 +390,12 @@ import Foundation
         return dataRequest
     }
     
-    private func handleResponse(response: DataResponse<Data>, url: String, event: String,
-                                responseQueue: DispatchQueue = .main,
-                                success: ArSuccessCompletion? = nil,
-                                failure: ArErrorCompletion? = nil) {
+    func handleResponse(response: DataResponse<Data>,
+                        url: String,
+                        event: String,
+                        responseQueue: DispatchQueue = .main,
+                        success: ArSuccessCompletion? = nil,
+                        failure: ArErrorCompletion? = nil) {
         do {
             let data = try checkResponse(response)
             
@@ -264,7 +428,7 @@ import Foundation
         }
     }
     
-    private func checkResponse(_ response: DataResponse<Data>) throws -> Data {
+    func checkResponse(_ response: DataResponse<Data>) throws -> Data {
         if let error = response.error {
             throw error
         }
@@ -488,7 +652,7 @@ fileprivate extension ArHttpMethod {
 }
 
 fileprivate extension HTTPMethod {
-     var encoding: ParameterEncoding {
+    var encoding: ParameterEncoding {
         switch self {
         case .get:   return URLEncoding.default
         case .post:  return JSONEncoding.default
