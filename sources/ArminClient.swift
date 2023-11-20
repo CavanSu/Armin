@@ -7,6 +7,10 @@
 
 import Foundation
 
+enum ArHeaderContentType {
+    case json, octetStream(fileURL: URL)
+}
+
 @objc open class ArminClient: NSObject {
     private lazy var sessions = [String: SessionManager]()    // Key: sessionId
     private lazy var retryHelpers = [String: ArRetryHelper]() // Key: sessionId
@@ -34,7 +38,7 @@ import Foundation
         let closure = ArSuccessCompletion.json { json in
             jsonSuccess?(json)
         }
-        
+
         request(url: url,
                 headers: headers,
                 parameters: parameters,
@@ -46,7 +50,7 @@ import Foundation
                 success: closure,
                 failure: failure)
     }
-    
+
     @objc public func objc_request(url: String,
                                    headers: [String: String]?,
                                    parameters: [String: Any]?,
@@ -60,7 +64,7 @@ import Foundation
         let closure = ArSuccessCompletion.data { data in
             dataSuccess?(data)
         }
-        
+
         request(url: url,
                 headers: headers,
                 parameters: parameters,
@@ -72,7 +76,7 @@ import Foundation
                 success: closure,
                 failure: failure)
     }
-    
+
     @objc public func objc_request(url: String,
                                    headers: [String: String]?,
                                    parameters: [String: Any]?,
@@ -86,7 +90,7 @@ import Foundation
         let closure = ArSuccessCompletion.blank {
             success?()
         }
-        
+
         request(url: url,
                 headers: headers,
                 parameters: parameters,
@@ -109,30 +113,20 @@ import Foundation
                         retryCount: Int = 0,
                         success: ArSuccessCompletion? = nil,
                         failure: ArErrorCompletion? = nil) {
-        taskId += 1
+        let sessionId = openSession(event: event,
+                                    timeout: timeout.value,
+                                    retryCount: retryCount)
         
-        let sessionId = "\(event)-\(taskId)"
-        
-        let session = addSession(timeout: timeout.value,
-                                 id: sessionId)
-        
-        let retry = addRetryHelper(id: sessionId,
-                                   count: retryCount)
-        
-        privateRequest(session: session,
-                       retry: retry,
-                       url: url,
-                       headers: headers,
-                       parameters: parameters,
-                       method: method,
-                       event: event,
-                       timeout: timeout,
-                       responseQueue: responseQueue,
-                       success: success,
-                       failure: failure) { [weak self] in
-            self?.removeSession(id: sessionId)
-            self?.removeRetryHelper(id: sessionId)
-        }
+        startRequest(sessionId: sessionId,
+                     headerContentType: .json,
+                     url: url,
+                     headers: headers,
+                     parameters: parameters,
+                     method: method,
+                     responseQueue: responseQueue,
+                     event: event,
+                     success: success,
+                     failure: failure)
     }
     
     @objc public func objc_upload(fileURL: URL,
@@ -220,101 +214,58 @@ import Foundation
                        retryCount: Int = 0,
                        success: ArSuccessCompletion? = nil,
                        failure: ArErrorCompletion? = nil) {
+        let sessionId = openSession(event: event,
+                                    timeout: timeout.value,
+                                    retryCount: retryCount)
+        
+        startRequest(sessionId: sessionId,
+                     headerContentType: .octetStream(fileURL: fileURL),
+                     url: url,
+                     headers: headers,
+                     method: method,
+                     responseQueue: responseQueue,
+                     event: event,
+                     success: success,
+                     failure: failure)
+    }
+}
+
+// MARK: - Step 1: Open session & Step 5: Close session
+extension ArminClient {
+    func openSession(event: String,
+                     timeout: TimeInterval,
+                     retryCount: Int) -> String {
         taskId += 1
         
         let sessionId = "\(event)-\(taskId)"
         
-        let session = addSession(timeout: timeout.value,
-                                 id: sessionId)
+        let _ = addSession(timeout: timeout,
+                           id: sessionId)
         
-        let retry = addRetryHelper(id: sessionId,
-                                   count: retryCount)
+        let _ = addRetryHelper(id: sessionId,
+                               count: retryCount)
         
-        privateUpload(session: session,
-                      retry: retry,
-                      fileURL: fileURL,
-                      to: url,
-                      headers: headers,
-                      method: method,
-                      event: event,
-                      timeout: timeout,
-                      responseQueue: responseQueue,
-                      success: success,
-                      failure: failure) { [weak self] in
-            self?.removeSession(id: sessionId)
-            self?.removeRetryHelper(id: sessionId)
-        }
+        return sessionId
+    }
+    
+    func closeSession(_ id: String) {
+        removeSession(id: id)
+        removeRetryHelper(id: id)
     }
 }
 
-private extension ArminClient {
-    func privateUpload(session: SessionManager,
-                       retry: ArRetryHelper?,
-                       fileURL: URL,
-                       to url: String,
-                       headers: [String: String]? = nil,
-                       method: ArHttpMethod,
-                       event: String,
-                       timeout: ArRequestTimeout = .medium,
-                       responseQueue: DispatchQueue = .main,
-                       success: ArSuccessCompletion? = nil,
-                       failure: ArErrorCompletion? = nil,
-                       completion: @escaping ArExCompletion) {
-        var extra = "url: \(url)"
-        extra += ", headers: \(optionalDescription(headers))"
-        
-        log(info: "http upload, event: \(event)",
-            extra: extra)
-        
-        let queue = responseQueue
-        
-        let request = session.upload(fileURL,
-                                     to: url,
-                                     method: method.alType,
-                                     headers: headers)
-        
-        request.responseData(queue: queue) { [weak self] (dataResponse) in
-            guard let strongSelf = self else {
-                return
-            }
-            
-            strongSelf.handleResponse(response: dataResponse,
-                                      url: url,
-                                      event: event,
-                                      success: success) { [weak retry] error in
-                
-                if let `retry` = retry, retry.ifNeedRetry() {
-                    retry.perform { [weak self, weak retry] in
-                        self?.privateUpload(session: session,
-                                            retry: retry,
-                                            fileURL: fileURL,
-                                            to: url,
-                                            headers: headers,
-                                            method: method,
-                                            event: event,
-                                            success: success,
-                                            failure: failure,
-                                            completion: completion)
-                    }
-                } else {
-                    failure?(error)
-                }
-            }
-        }
-    }
-    
-    func privateRequest(session: SessionManager,
-                        retry: ArRetryHelper?,
-                        url: String,
-                        headers: [String: String]? = nil,
-                        parameters: [String: Any]? = nil,
-                        method: ArHttpMethod,
-                        event: String,
-                        timeout: ArRequestTimeout = .medium,
-                        responseQueue: DispatchQueue = .main,
-                        success: ArSuccessCompletion? = nil,
-                        failure: ArErrorCompletion? = nil,
-                        completion: @escaping ArExCompletion) {
+// MARK: - Step 2: Request
+extension ArminClient {
+    func startRequest(sessionId: String,
+                      headerContentType: ArHeaderContentType,
+                      url: String,
+                      headers: [String: String]?,
+                      parameters: [String: Any]? = nil,
+                      method: ArHttpMethod,
+                      responseQueue: DispatchQueue,
+                      event: String,
+                      success: ArSuccessCompletion?,
+                      failure: ArErrorCompletion?) {
         var extra = "url: \(url)"
         extra += ", headers: \(optionalDescription(headers))"
         extra += ", parameters: \(optionalDescription(parameters))"
@@ -322,109 +273,143 @@ private extension ArminClient {
         log(info: "http request, event: \(event)",
             extra: extra)
         
-        let queue = responseQueue
+        do {
+            let session = try getSession(id: sessionId)
+            let retryHelper = try getRetryHelper(id: sessionId)
+            
+            let request = createRequest(session: session,
+                                        headerContentType: headerContentType,
+                                        method: method,
+                                        url: url,
+                                        headers: headers,
+                                        parameters: parameters)
+            
+            handleResponse(request: request,
+                           url: url,
+                           event: event,
+                           queue: responseQueue,
+                           success: success) { [weak self] in
+                self?.closeSession(sessionId)
+            } ifRetry: { [weak self, weak retryHelper] (error) in
+                // MARK: - Step 4: Retry
+                
+                if let `retryHelper` = retryHelper,
+                   retryHelper.ifNeedRetry() {
+                    
+                    let count = retryHelper.retryCount + 1
+                    let max = retryHelper.maxCount
+                    
+                    retryHelper.perform { [weak self] in
+                        self?.log(info: "http request retry: \(count), max: \(max), event: \(event)",
+                                  extra: extra)
+                        
+                        self?.startRequest(sessionId: sessionId,
+                                           headerContentType: headerContentType,
+                                           url: url,
+                                           headers: headers,
+                                           parameters: parameters,
+                                           method: method,
+                                           responseQueue: responseQueue,
+                                           event: event,
+                                           success: success,
+                                           failure: failure)
+                    }
+                } else {
+                    failure?(error)
+                    self?.closeSession(sessionId)
+                }
+            }
+        } catch {
+            failure?(error)
+        }
+    }
+    
+    func createRequest(session: SessionManager,
+                       headerContentType: ArHeaderContentType,
+                       method: ArHttpMethod,
+                       url: String,
+                       headers: [String: String]?,
+                       parameters: [String: Any]?) -> DataRequest {
+        var dataRequest: DataRequest
         
-        let request = createRequest(session: session,
-                                    method: method,
-                                    url: url,
-                                    parameters: parameters,
-                                    headers: headers)
+        switch headerContentType {
+        case .json:
+            if method == .get {
+                var fullUrl = url
+                
+                if let parameters = parameters {
+                    fullUrl = urlAddParameters(url: url,
+                                               parameters: parameters)
+                }
+                
+                dataRequest = session.request(fullUrl,
+                                              method: method.alType,
+                                              encoding: method.alType.encoding,
+                                              headers: headers)
+            } else {
+                dataRequest = session.request(url,
+                                              method: method.alType,
+                                              parameters: parameters,
+                                              encoding: method.alType.encoding,
+                                              headers: headers)
+            }
+        case .octetStream(let fileURL):
+            dataRequest = session.upload(fileURL,
+                                         to: url,
+                                         method: method.alType,
+                                         headers: headers)
+        }
         
+        return dataRequest
+    }
+}
+
+// MARK: - Step 3: Response
+extension ArminClient {
+    func handleResponse(request: DataRequest,
+                        url: String,
+                        event: String,
+                        queue: DispatchQueue,
+                        success: ArSuccessCompletion? = nil,
+                        completion: @escaping ArCompletion,
+                        ifRetry: @escaping ArErrorCompletion) {
         request.responseData(queue: queue) { [weak self] (dataResponse) in
             guard let strongSelf = self else {
                 return
             }
             
-            strongSelf.handleResponse(response: dataResponse,
-                                      url: url,
-                                      event: event,
-                                      success: success) { [weak retry] error in
+            do {
+                let data = try strongSelf.checkResponse(dataResponse)
                 
-                if let `retry` = retry, retry.ifNeedRetry() {
-                    retry.perform { [weak self, weak retry] in
-                        self?.privateRequest(session: session,
-                                             retry: retry,
-                                             url: url,
-                                             headers: headers,
-                                             parameters: parameters,
-                                             method: method,
-                                             event: event,
-                                             success: success,
-                                             failure: failure,
-                                             completion: completion)
+                let info = "http request sunccessfully, event: \(event)"
+                var extra = "url: \(url)"
+                
+                if let `success` = success {
+                    switch success {
+                    case .json(let closure):
+                        let json = try data.json()
+                        extra += ", response json: \(json.description)"
+                        try closure(json)
+                    case .data(let closure):
+                        try closure(data)
+                    case .blank(let closure):
+                        try closure()
                     }
-                } else {
-                    failure?(error)
                 }
+                
+                strongSelf.log(info: info,
+                               extra: extra)
+                
+                completion()
+            } catch let error {
+                var extra = "http request unsunccessfully, event: \(event)"
+                extra += ", url: \(url)"
+                
+                strongSelf.log(error: error,
+                               extra: extra)
+                
+                ifRetry(error)
             }
-        }
-    }
-    
-    func createRequest(session: SessionManager,
-                       method: ArHttpMethod,
-                       url: String,
-                       parameters: [String: Any]?,
-                       headers: [String: String]?) -> DataRequest {
-        var dataRequest: DataRequest
-        
-        if method == .get {
-            var fullUrl = url
-            
-            if let parameters = parameters {
-                fullUrl = urlAddParameters(url: url,
-                                           parameters: parameters)
-            }
-            
-            dataRequest = session.request(fullUrl,
-                                          method: method.alType,
-                                          encoding: method.alType.encoding,
-                                          headers: headers)
-        } else {
-            dataRequest = session.request(url,
-                                          method: method.alType,
-                                          parameters: parameters,
-                                          encoding: method.alType.encoding,
-                                          headers: headers)
-        }
-        
-        return dataRequest
-    }
-    
-    func handleResponse(response: DataResponse<Data>,
-                        url: String,
-                        event: String,
-                        responseQueue: DispatchQueue = .main,
-                        success: ArSuccessCompletion? = nil,
-                        failure: ArErrorCompletion? = nil) {
-        do {
-            let data = try checkResponse(response)
-            
-            let info = "http request sunccessfully, event: \(event)"
-            var extra = "url: \(url)"
-            
-            if let `success` = success {
-                switch success {
-                case .json(let closure):
-                    let json = try data.json()
-                    extra += ", response json: \(json.description)"
-                    try closure(json)
-                case .data(let closure):
-                    try closure(data)
-                case .blank(let closure):
-                    try closure()
-                }
-            }
-            
-            log(info: info,
-                extra: extra)
-        } catch let error {
-            var extra = "http request unsunccessfully, event: \(event)"
-            extra += ", url: \(url)"
-            
-            log(error: error,
-                extra: extra)
-            
-            failure?(error)
         }
     }
     
@@ -450,14 +435,6 @@ private extension ArminClient {
         
         return data
     }
-    
-    func optionalDescription<T>(_ any: T?) -> String where T : CustomStringConvertible {
-        if let `any` = any {
-            return any.description
-        } else {
-            return "nil"
-        }
-    }
 }
 
 private extension ArminClient {
@@ -477,6 +454,15 @@ private extension ArminClient {
         }
     }
     
+    func getSession(id: String) throws -> SessionManager {
+        guard let session = sessions[id] else {
+            throw NSError(code: -1,
+                          message: "get session nil")
+        }
+        
+        return session
+    }
+    
     func removeSession(id: String) {
         sessions.removeValue(forKey: id)
     }
@@ -491,10 +477,21 @@ private extension ArminClient {
         return helper
     }
     
+    func getRetryHelper(id: String) throws -> ArRetryHelper {
+        guard let retryHelper = retryHelpers[id] else {
+            throw NSError(code: -1,
+                          message: "get session nil")
+        }
+        
+        return retryHelper
+    }
+    
     func removeRetryHelper(id: String) {
         retryHelpers.removeValue(forKey: id)
     }
-    
+}
+
+private extension ArminClient {
     func urlAddParameters(url: String,
                           parameters: [String: Any]) -> String {
         var fullURL = url
@@ -512,6 +509,14 @@ private extension ArminClient {
         }
         
         return fullURL
+    }
+    
+    func optionalDescription<T>(_ any: T?) -> String where T : CustomStringConvertible {
+        if let `any` = any {
+            return any.description
+        } else {
+            return "nil"
+        }
     }
 }
 
@@ -551,64 +556,6 @@ private extension ArminClient {
             self.logTube?.log(error: error,
                               extra: extra)
         }
-    }
-}
-
-fileprivate class ArAfterWorker {
-    private var pendingRequestWorkItem: DispatchWorkItem?
-    
-    func perform(after: TimeInterval,
-                 on queue: DispatchQueue,
-                 _ block: @escaping (() -> Void)) {
-        // Cancel the currently pending item
-        pendingRequestWorkItem?.cancel()
-        
-        // Wrap our request in a work item
-        let requestWorkItem = DispatchWorkItem(block: block)
-        pendingRequestWorkItem = requestWorkItem
-        queue.asyncAfter(deadline: .now() + after,
-                         execute: requestWorkItem)
-    }
-    
-    func cancel() {
-        pendingRequestWorkItem?.cancel()
-    }
-}
-
-fileprivate class ArRetryHelper {
-    private let work = ArAfterWorker()
-    
-    var maxCount: Int
-    var retryCount: Int
-    var queue: DispatchQueue
-    
-    init(maxCount: Int,
-         queue: DispatchQueue) {
-        self.maxCount = maxCount
-        self.retryCount = 0
-        self.queue = queue
-    }
-    
-    func ifNeedRetry() -> Bool {
-        if retryCount >= maxCount {
-            return false
-        } else {
-            return true
-        }
-    }
-    
-    func perform(_ block: @escaping (() -> Void)) {
-        retryCount += 1
-        
-        guard ifNeedRetry() else {
-            return
-        }
-        
-        let after = (TimeInterval(retryCount) * 0.25)
-        
-        work.perform(after: after,
-                     on: queue,
-                     block)
     }
 }
 
