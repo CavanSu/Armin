@@ -16,6 +16,7 @@ public typealias ArDataCompletion = ((Data) -> Void)
 public typealias ArJsonCompletion = (([String: Any]) -> Void)
 public typealias ArCompletion = (() -> Void)
 
+public typealias ArErrorRetryCompletion = (Error) -> (Bool)
 public typealias ArErrorCompletion = (Error) -> (Void)
 
 // MARK: - Enum
@@ -64,10 +65,10 @@ public enum ArRequestTimeout {
 
 // MARK: - Protocol
 @objc public protocol ArLogTube: NSObjectProtocol {
-    func log(info: String,
-             extra: String?)
-    func log(warning: String,
-             extra: String?)
-    func log(error: Error,
-             extra: String?)
+    func onLog(info: String,
+               extra: [String: Any]?)
+    func onLog(warning: String,
+               extra: [String: Any]?)
+    func onLog(error: Error,
+               extra: [String: Any]?)
 }

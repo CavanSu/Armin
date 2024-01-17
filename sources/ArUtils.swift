@@ -27,7 +27,7 @@ class ArAfterWorker {
     }
 }
 
-class ArRetryHelper {
+class ArRetry {
     private let work = ArAfterWorker()
     private let queue: DispatchQueue
     private(set) var retryCount: Int

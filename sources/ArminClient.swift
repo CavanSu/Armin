@@ -7,19 +7,25 @@
 
 import Foundation
 
+@objc public protocol ArminClientDelegate: NSObjectProtocol {
+    func onRequestFailure(error: Error)
+}
+
 enum ArHeaderContentType {
     case json, octetStream(fileURL: URL)
 }
 
 @objc open class ArminClient: NSObject {
     private lazy var sessions = [String: SessionManager]()    // Key: sessionId
-    private lazy var retryHelpers = [String: ArRetryHelper]() // Key: sessionId
+    private lazy var retrys = [String: ArRetry]()             // Key: sessionId
     
     private var taskId = 0
     
     private var afterQueue = DispatchQueue(label: "com.armin.retry.thread")
     
     public weak var logTube: ArLogTube?
+    
+    public weak var delegate: ArminClientDelegate?
     
     @objc public init(logTube: ArLogTube? = nil) {
         self.logTube = logTube
@@ -34,11 +40,12 @@ enum ArHeaderContentType {
                                    responseQueue: DispatchQueue,
                                    retryCount: Int,
                                    jsonSuccess: ArJsonCompletion?,
-                                   failure: ArErrorCompletion?) {
+                                   failure: ArErrorCompletion?,
+                                   cancelRetry: ArErrorRetryCompletion?) {
         let closure = ArSuccessCompletion.json { json in
             jsonSuccess?(json)
         }
-
+        
         request(url: url,
                 headers: headers,
                 parameters: parameters,
@@ -50,7 +57,7 @@ enum ArHeaderContentType {
                 success: closure,
                 failure: failure)
     }
-
+    
     @objc public func objc_request(url: String,
                                    headers: [String: String]?,
                                    parameters: [String: Any]?,
@@ -60,11 +67,12 @@ enum ArHeaderContentType {
                                    responseQueue: DispatchQueue,
                                    retryCount: Int,
                                    dataSuccess: ArDataCompletion?,
-                                   failure: ArErrorCompletion?) {
+                                   failure: ArErrorCompletion?,
+                                   cancelRetry: ArErrorRetryCompletion?) {
         let closure = ArSuccessCompletion.data { data in
             dataSuccess?(data)
         }
-
+        
         request(url: url,
                 headers: headers,
                 parameters: parameters,
@@ -76,7 +84,7 @@ enum ArHeaderContentType {
                 success: closure,
                 failure: failure)
     }
-
+    
     @objc public func objc_request(url: String,
                                    headers: [String: String]?,
                                    parameters: [String: Any]?,
@@ -86,11 +94,12 @@ enum ArHeaderContentType {
                                    responseQueue: DispatchQueue,
                                    retryCount: Int,
                                    success: ArCompletion?,
-                                   failure: ArErrorCompletion?) {
+                                   failure: ArErrorCompletion?,
+                                   cancelRetry: ArErrorRetryCompletion?) {
         let closure = ArSuccessCompletion.blank {
             success?()
         }
-
+        
         request(url: url,
                 headers: headers,
                 parameters: parameters,
@@ -112,7 +121,8 @@ enum ArHeaderContentType {
                         responseQueue: DispatchQueue = .main,
                         retryCount: Int = 0,
                         success: ArSuccessCompletion? = nil,
-                        failure: ArErrorCompletion? = nil) {
+                        failure: ArErrorCompletion? = nil,
+                        cancelRetry: ArErrorRetryCompletion? = nil) {
         let sessionId = openSession(event: event,
                                     timeout: timeout.value,
                                     retryCount: retryCount)
@@ -126,7 +136,8 @@ enum ArHeaderContentType {
                      responseQueue: responseQueue,
                      event: event,
                      success: success,
-                     failure: failure)
+                     failure: failure,
+                     cancelRetry: cancelRetry)
     }
     
     @objc public func objc_upload(fileURL: URL,
@@ -138,7 +149,8 @@ enum ArHeaderContentType {
                                   responseQueue: DispatchQueue,
                                   retryCount: Int,
                                   jsonSuccess: ArJsonCompletion?,
-                                  failure: ArErrorCompletion?) {
+                                  failure: ArErrorCompletion?,
+                                  cancelRetry: ArErrorRetryCompletion?) {
         let closure = ArSuccessCompletion.json { json in
             jsonSuccess?(json)
         }
@@ -151,7 +163,8 @@ enum ArHeaderContentType {
                responseQueue: responseQueue,
                retryCount: retryCount,
                success: closure,
-               failure: failure)
+               failure: failure,
+               cancelRetry: cancelRetry)
     }
     
     @objc public func objc_upload(fileURL: URL,
@@ -163,7 +176,8 @@ enum ArHeaderContentType {
                                   responseQueue: DispatchQueue,
                                   retryCount: Int,
                                   dataSuccess: ArDataCompletion?,
-                                  failure: ArErrorCompletion?) {
+                                  failure: ArErrorCompletion?,
+                                  cancelRetry: ArErrorRetryCompletion?) {
         let closure = ArSuccessCompletion.data { data in
             dataSuccess?(data)
         }
@@ -176,7 +190,8 @@ enum ArHeaderContentType {
                responseQueue: responseQueue,
                retryCount: retryCount,
                success: closure,
-               failure: failure)
+               failure: failure,
+               cancelRetry: cancelRetry)
     }
     
     @objc public func objc_upload(fileURL: URL,
@@ -188,7 +203,8 @@ enum ArHeaderContentType {
                                   responseQueue: DispatchQueue,
                                   retryCount: Int,
                                   success: ArCompletion?,
-                                  failure: ArErrorCompletion?) {
+                                  failure: ArErrorCompletion?,
+                                  cancelRetry: ArErrorRetryCompletion?) {
         let closure = ArSuccessCompletion.blank {
             success?()
         }
@@ -201,7 +217,8 @@ enum ArHeaderContentType {
                responseQueue: responseQueue,
                retryCount: retryCount,
                success: closure,
-               failure: failure)
+               failure: failure,
+               cancelRetry: cancelRetry)
     }
     
     public func upload(fileURL: URL,
@@ -213,7 +230,8 @@ enum ArHeaderContentType {
                        responseQueue: DispatchQueue = .main,
                        retryCount: Int = 0,
                        success: ArSuccessCompletion? = nil,
-                       failure: ArErrorCompletion? = nil) {
+                       failure: ArErrorCompletion? = nil,
+                       cancelRetry: ArErrorRetryCompletion? = nil) {
         let sessionId = openSession(event: event,
                                     timeout: timeout.value,
                                     retryCount: retryCount)
@@ -226,7 +244,8 @@ enum ArHeaderContentType {
                      responseQueue: responseQueue,
                      event: event,
                      success: success,
-                     failure: failure)
+                     failure: failure,
+                     cancelRetry: cancelRetry)
     }
 }
 
@@ -242,15 +261,15 @@ extension ArminClient {
         let _ = addSession(timeout: timeout,
                            id: sessionId)
         
-        let _ = addRetryHelper(id: sessionId,
-                               count: retryCount)
+        let _ = addRetry(id: sessionId,
+                         count: retryCount)
         
         return sessionId
     }
     
     func closeSession(_ id: String) {
         removeSession(id: id)
-        removeRetryHelper(id: id)
+        removeRetry(id: id)
     }
 }
 
@@ -265,17 +284,18 @@ extension ArminClient {
                       responseQueue: DispatchQueue,
                       event: String,
                       success: ArSuccessCompletion?,
-                      failure: ArErrorCompletion?) {
-        var extra = "url: \(url)"
-        extra += ", headers: \(optionalDescription(headers))"
-        extra += ", parameters: \(optionalDescription(parameters))"
+                      failure: ArErrorCompletion?,
+                      cancelRetry: ArErrorRetryCompletion?) {
+        var extra = ["url": url,
+                     "headers": optionalDescription(headers),
+                     "parameters": optionalDescription(parameters)]
         
         log(info: "http request, event: \(event)",
             extra: extra)
         
         do {
             let session = try getSession(id: sessionId)
-            let retryHelper = try getRetryHelper(id: sessionId)
+            let retry = try getRetry(id: sessionId)
             
             let request = createRequest(session: session,
                                         headerContentType: headerContentType,
@@ -290,37 +310,54 @@ extension ArminClient {
                            queue: responseQueue,
                            success: success) { [weak self] in
                 self?.closeSession(sessionId)
-            } ifRetry: { [weak self, weak retryHelper] (error) in
+            } ifRetry: { [weak self, weak retry] (error) in
                 // MARK: - Step 4: Retry
                 
-                if let `retryHelper` = retryHelper,
-                   retryHelper.ifNeedRetry() {
-                    
-                    let count = retryHelper.retryCount + 1
-                    let max = retryHelper.maxCount
-                    
-                    retryHelper.perform { [weak self] in
-                        self?.log(info: "http request retry: \(count), max: \(max), event: \(event)",
-                                  extra: extra)
-                        
-                        self?.startRequest(sessionId: sessionId,
-                                           headerContentType: headerContentType,
-                                           url: url,
-                                           headers: headers,
-                                           parameters: parameters,
-                                           method: method,
-                                           responseQueue: responseQueue,
-                                           event: event,
-                                           success: success,
-                                           failure: failure)
-                    }
-                } else {
+                guard let `retry` = retry else {
                     failure?(error)
+                    self?.delegate?.onRequestFailure(error: error)
                     self?.closeSession(sessionId)
+                    return
+                }
+                
+                var internalNeedRetry = retry.ifNeedRetry()
+                var externalNeedRetry: Bool = true
+                
+                if let `cancelRetry` = cancelRetry {
+                    externalNeedRetry = cancelRetry(error)
+                }
+                
+                guard internalNeedRetry,
+                      externalNeedRetry else {
+                    failure?(error)
+                    self?.delegate?.onRequestFailure(error: error)
+                    self?.closeSession(sessionId)
+                    return
+                }
+                
+                let count = retry.retryCount + 1
+                let max = retry.maxCount
+                
+                retry.perform { [weak self] in
+                    self?.log(info: "http request retry: \(count), max: \(max), event: \(event)",
+                              extra: extra)
+                    
+                    self?.startRequest(sessionId: sessionId,
+                                       headerContentType: headerContentType,
+                                       url: url,
+                                       headers: headers,
+                                       parameters: parameters,
+                                       method: method,
+                                       responseQueue: responseQueue,
+                                       event: event,
+                                       success: success,
+                                       failure: failure,
+                                       cancelRetry: cancelRetry)
                 }
             }
         } catch {
             failure?(error)
+            delegate?.onRequestFailure(error: error)
         }
     }
     
@@ -381,14 +418,18 @@ extension ArminClient {
             do {
                 let data = try strongSelf.checkResponse(dataResponse)
                 
-                let info = "http request sunccessfully, event: \(event)"
-                var extra = "url: \(url)"
+                let info = "http request successfully"
+                
+                var extra = ["url": url,
+                             "event": event]
                 
                 if let `success` = success {
                     switch success {
                     case .json(let closure):
                         let json = try data.json()
-                        extra += ", response json: \(json.description)"
+                        
+                        extra["response json"] = json.description
+                        
                         try closure(json)
                     case .data(let closure):
                         try closure(data)
@@ -402,8 +443,9 @@ extension ArminClient {
                 
                 completion()
             } catch let error {
-                var extra = "http request unsunccessfully, event: \(event)"
-                extra += ", url: \(url)"
+                var extra = ["error": "http request unsuccessfully",
+                             "event": event,
+                             "url": url]
                 
                 strongSelf.log(error: error,
                                extra: extra)
@@ -467,27 +509,27 @@ private extension ArminClient {
         sessions.removeValue(forKey: id)
     }
     
-    func addRetryHelper(id: String,
-                        count: Int) -> ArRetryHelper {
-        let helper = ArRetryHelper(maxCount: count,
-                                   queue: afterQueue)
+    func addRetry(id: String,
+                  count: Int) -> ArRetry {
+        let helper = ArRetry(maxCount: count,
+                             queue: afterQueue)
         
-        retryHelpers[id] = helper
+        retrys[id] = helper
         
         return helper
     }
     
-    func getRetryHelper(id: String) throws -> ArRetryHelper {
-        guard let retryHelper = retryHelpers[id] else {
+    func getRetry(id: String) throws -> ArRetry {
+        guard let Retry = retrys[id] else {
             throw NSError(code: -1,
-                          message: "get session nil")
+                          message: "get retry nil")
         }
         
-        return retryHelper
+        return Retry
     }
     
-    func removeRetryHelper(id: String) {
-        retryHelpers.removeValue(forKey: id)
+    func removeRetry(id: String) {
+        retrys.removeValue(forKey: id)
     }
 }
 
@@ -523,38 +565,38 @@ private extension ArminClient {
 // MARK: - Log
 private extension ArminClient {
     func log(info: String,
-             extra: String? = nil) {
+             extra: [String: Any]? = nil) {
         DispatchQueue.main.async { [weak self] in
             guard let `self` = self else {
                 return
             }
             
-            self.logTube?.log(info: info,
-                              extra: extra)
+            self.logTube?.onLog(info: info,
+                                extra: extra)
         }
     }
     
     func log(warning: String,
-             extra: String? = nil) {
+             extra: [String: Any]? = nil) {
         DispatchQueue.main.async { [weak self] in
             guard let `self` = self else {
                 return
             }
             
-            self.logTube?.log(warning: warning,
-                              extra: extra)
+            self.logTube?.onLog(warning: warning,
+                                extra: extra)
         }
     }
     
     func log(error: Error,
-             extra: String? = nil) {
+             extra: [String: Any]? = nil) {
         DispatchQueue.main.async { [weak self] in
             guard let `self` = self else {
                 return
             }
             
-            self.logTube?.log(error: error,
-                              extra: extra)
+            self.logTube?.onLog(error: error,
+                                extra: extra)
         }
     }
 }
