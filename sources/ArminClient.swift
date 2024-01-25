@@ -8,7 +8,7 @@
 import Foundation
 
 @objc public protocol ArminClientDelegate: NSObjectProtocol {
-    func onRequestFailure(error: Error)
+    func onRequestedFailure(error: Error)
 }
 
 enum ArHeaderContentType {
@@ -22,6 +22,8 @@ enum ArHeaderContentType {
     private var taskId = 0
     
     private var afterQueue = DispatchQueue(label: "com.armin.retry.thread")
+    
+    public let localErrorCode = -1
     
     public weak var logTube: ArLogTube?
     
@@ -315,7 +317,7 @@ extension ArminClient {
                 
                 guard let `retry` = retry else {
                     failure?(error)
-                    self?.delegate?.onRequestFailure(error: error)
+                    self?.delegate?.onRequestedFailure(error: error)
                     self?.closeSession(sessionId)
                     return
                 }
@@ -330,7 +332,7 @@ extension ArminClient {
                 guard internalNeedRetry,
                       externalNeedRetry else {
                     failure?(error)
-                    self?.delegate?.onRequestFailure(error: error)
+                    self?.delegate?.onRequestedFailure(error: error)
                     self?.closeSession(sessionId)
                     return
                 }
@@ -357,7 +359,7 @@ extension ArminClient {
             }
         } catch {
             failure?(error)
-            delegate?.onRequestFailure(error: error)
+            delegate?.onRequestedFailure(error: error)
         }
     }
     
@@ -426,7 +428,7 @@ extension ArminClient {
                 if let `success` = success {
                     switch success {
                     case .json(let closure):
-                        let json = try data.json()
+                        let json = try data.json(localErrorCode: strongSelf.localErrorCode)
                         
                         extra["response json"] = json.description
                         
@@ -461,7 +463,7 @@ extension ArminClient {
         }
         
         guard let statusCode = response.response?.statusCode else {
-            throw NSError(code: -1,
+            throw NSError(code: localErrorCode,
                           message: "http code nil")
         }
         
@@ -471,7 +473,7 @@ extension ArminClient {
         }
         
         guard let data = response.data else {
-            throw NSError(code: -1,
+            throw NSError(code: localErrorCode,
                           message: "http response data nil")
         }
         
@@ -498,7 +500,7 @@ private extension ArminClient {
     
     func getSession(id: String) throws -> SessionManager {
         guard let session = sessions[id] else {
-            throw NSError(code: -1,
+            throw NSError(code: localErrorCode,
                           message: "get session nil")
         }
         
@@ -521,7 +523,7 @@ private extension ArminClient {
     
     func getRetry(id: String) throws -> ArRetry {
         guard let Retry = retrys[id] else {
-            throw NSError(code: -1,
+            throw NSError(code: localErrorCode,
                           message: "get retry nil")
         }
         
@@ -611,12 +613,12 @@ fileprivate extension NSError {
 }
 
 fileprivate extension Data {
-    func json() throws -> [String: Any] {
+    func json(localErrorCode: Int) throws -> [String: Any] {
         let object = try JSONSerialization.jsonObject(with: self,
                                                       options: [])
         
         guard let json = object as? [String: Any] else {
-            throw NSError(code: -1,
+            throw NSError(code: localErrorCode,
                           message: "data is convert to json unsuccessfully")
         }
         
