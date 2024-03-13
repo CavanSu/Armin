@@ -18,7 +18,7 @@ class ViewController: UIViewController {
     }
     
     func getRequest() {
-        let url = "https://www.tianqiapi.com/api"
+        let url = "https://www.tianqapi.com/api"
         
         let parameters = ["appid": "23035354",
                           "appsecret": "8YvlPNrz",
@@ -35,6 +35,7 @@ class ViewController: UIViewController {
         client.request(url: url, parameters: parameters,
                        method: .get,
                        event: "Sample-get",
+                       retryCount: 5,
                        success: success) { error in
             print("error: \(error.localizedDescription)")
         }
@@ -42,18 +43,24 @@ class ViewController: UIViewController {
 }
 
 extension ViewController: ArLogTube {
-    func log(info: String,
-             extra: String?) {
+    func onLog(info: String,
+               extra: [String : Any]?) {
+        print(">>>>>>>>>>>>>>>>>>>>")
         print("info: \(info), extra: \(extra ?? "nil")")
+        print(">>>>>>>>>>>>>>>>>>>>")
     }
     
-    func log(warning: String,
-             extra: String?) {
+    func onLog(warning: String,
+               extra: [String : Any]?) {
+        print(">>>>>>>>>>>>>>>>>>>>")
         print("warning: \(warning), extra: \(extra ?? "nil")")
+        print(">>>>>>>>>>>>>>>>>>>>")
     }
     
-    func log(error: Error,
-             extra: String?) {
+    func onLog(error: Error,
+               extra: [String : Any]?) {
+        print(">>>>>>>>>>>>>>>>>>>>")
         print("error: \(error), extra: \(extra ?? "nil")")
+        print(">>>>>>>>>>>>>>>>>>>>")
     }
 }
