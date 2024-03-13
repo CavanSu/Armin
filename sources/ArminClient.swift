@@ -23,7 +23,7 @@ enum ArHeaderContentType {
     
     private var afterQueue = DispatchQueue(label: "com.armin.retry.thread")
     
-    public let localErrorCode = -1
+    @objc public let localErrorCode = -1
     
     public weak var logTube: ArLogTube?
     
