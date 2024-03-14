@@ -63,6 +63,10 @@ public enum ArRequestTimeout {
     }
 }
 
+@objc public class ArError: NSError {
+    var data: Data?
+}
+
 // MARK: - Protocol
 @objc public protocol ArLogTube: NSObjectProtocol {
     func onLog(info: String,

@@ -288,7 +288,7 @@ extension ArminClient {
                       success: ArSuccessCompletion?,
                       failure: ArErrorCompletion?,
                       cancelRetry: ArErrorRetryCompletion?) {
-        var extra = ["url": url,
+        let extra = ["url": url,
                      "headers": optionalDescription(headers),
                      "parameters": optionalDescription(parameters)]
         
@@ -322,7 +322,7 @@ extension ArminClient {
                     return
                 }
                 
-                var internalNeedRetry = retry.ifNeedRetry()
+                let internalNeedRetry = retry.ifNeedRetry()
                 var externalNeedRetry: Bool = true
                 
                 if let `cancelRetry` = cancelRetry {
@@ -445,7 +445,7 @@ extension ArminClient {
                 
                 completion()
             } catch let error {
-                var extra = ["error": "http request unsuccessfully",
+                let extra = ["error": "http request unsuccessfully",
                              "event": event,
                              "url": url]
                 
@@ -463,24 +463,18 @@ extension ArminClient {
         }
         
         guard let statusCode = response.response?.statusCode else {
-            throw NSError(code: localErrorCode,
+            throw ArError(code: localErrorCode,
                           message: "http code nil")
         }
         
         guard statusCode == 200 else {
-            var extra: [String: Any]? = nil
-            
-            if let data = response.data {
-                extra = ["responseData": data]
-            }
-            
-            throw NSError(code: statusCode,
+            throw ArError(code: statusCode,
                           message: "http code error",
-                          extra: extra)
+                          data: response.data)
         }
         
         guard let data = response.data else {
-            throw NSError(code: localErrorCode,
+            throw ArError(code: localErrorCode,
                           message: "http response data nil")
         }
         
@@ -507,7 +501,7 @@ private extension ArminClient {
     
     func getSession(id: String) throws -> SessionManager {
         guard let session = sessions[id] else {
-            throw NSError(code: localErrorCode,
+            throw ArError(code: localErrorCode,
                           message: "get session nil")
         }
         
@@ -530,7 +524,7 @@ private extension ArminClient {
     
     func getRetry(id: String) throws -> ArRetry {
         guard let Retry = retrys[id] else {
-            throw NSError(code: localErrorCode,
+            throw ArError(code: localErrorCode,
                           message: "get retry nil")
         }
         
@@ -610,21 +604,17 @@ private extension ArminClient {
     }
 }
 
-fileprivate extension NSError {
+fileprivate extension ArError {
     convenience init(code: Int,
                      message: String,
-                     extra: [String: Any]? = nil) {
-        var userInfo: [String: Any] = ["message": message]
-        
-        if let `extra` = extra {
-            userInfo.merge(extra) { (key1, key2) in
-                return key1
-            }
-        }
+                     data: Data? = nil) {
+        let userInfo: [String: Any] = ["message": message]
         
         self.init(domain: "Armin",
                   code: code,
                   userInfo: userInfo)
+        
+        self.data = data
     }
 }
 
@@ -634,7 +624,7 @@ fileprivate extension Data {
                                                       options: [])
         
         guard let json = object as? [String: Any] else {
-            throw NSError(code: localErrorCode,
+            throw ArError(code: localErrorCode,
                           message: "data is convert to json unsuccessfully")
         }
         
