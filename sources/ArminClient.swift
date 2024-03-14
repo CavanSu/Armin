@@ -468,8 +468,15 @@ extension ArminClient {
         }
         
         guard statusCode == 200 else {
+            var extra: [String: Any]? = nil
+            
+            if let data = response.data {
+                extra = ["responseData": data]
+            }
+            
             throw NSError(code: statusCode,
-                          message: "http code error")
+                          message: "http code error",
+                          extra: extra)
         }
         
         guard let data = response.data else {
@@ -605,10 +612,19 @@ private extension ArminClient {
 
 fileprivate extension NSError {
     convenience init(code: Int,
-                     message: String) {
+                     message: String,
+                     extra: [String: Any]? = nil) {
+        var userInfo: [String: Any] = ["message": message]
+        
+        if let `extra` = extra {
+            userInfo.merge(extra) { (key1, key2) in
+                return key1
+            }
+        }
+        
         self.init(domain: "Armin",
                   code: code,
-                  userInfo: ["message": message])
+                  userInfo: userInfo)
     }
 }
 
