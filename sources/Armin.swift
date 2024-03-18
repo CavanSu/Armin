@@ -76,11 +76,11 @@ public extension Armin {
                 
                 let work = self.worker(of: reTask.event)
                 work.perform(after: time,
-                             on: self.afterQueue, {
-                                self.request(task: reTask,
-                                             success: success,
-                                             failRetry: failRetry)
-                             })
+                             on: self.afterQueue, { [weak self] in
+                    self?.request(task: reTask,
+                                  success: success,
+                                  failRetry: failRetry)
+                })
             case .resign:
                 break
             }
@@ -114,8 +114,11 @@ public extension Armin {
                 }
                 
                 let work = self.worker(of: reTask.event)
-                work.perform(after: time, on: self.afterQueue, {
-                    self.upload(task: reTask, success: success, failRetry: failRetry)
+                work.perform(after: time,
+                             on: self.afterQueue, { [weak self] in
+                    self?.upload(task: reTask,
+                                 success: success,
+                                 failRetry: failRetry)
                 })
             case .resign:
                 break
