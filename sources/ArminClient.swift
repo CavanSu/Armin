@@ -7,17 +7,17 @@
 //
 
 public protocol ArminDelegate: NSObjectProtocol {
-    func armin(_ client: Armin,
+    func armin(_ client: ArminClient,
                requestSuccess event: ArRequestEvent,
                startTime: TimeInterval,
                url: String)
-    func armin(_ client: Armin,
+    func armin(_ client: ArminClient,
                requestFail error: ArError,
                event: ArRequestEvent,
                url: String)
 }
 
-open class Armin: NSObject, ArRequestAPIsProtocol {
+open class ArminClient: NSObject, ArRequestAPIsProtocol {
     private lazy var instances = [Int: SessionManager]() // Int: taskId
     private lazy var afterWorkers = [String: AfterWorker]() // String: ArRequestEvent name
     
@@ -34,7 +34,7 @@ open class Armin: NSObject, ArRequestAPIsProtocol {
     }
 }
 
-public extension Armin {
+public extension ArminClient {
     @objc func getCookieArray()-> [HTTPCookie]? {
         let cookieStorage = HTTPCookieStorage.shared
         let cookieArray = cookieStorage.cookies
@@ -46,7 +46,7 @@ public extension Armin {
     }
 }
 
-public extension Armin {
+public extension ArminClient {
     func request(task: ArRequestTaskProtocol,
                  responseOnMainQueue: Bool = true,
                  success: ArResponse? = nil,
@@ -166,7 +166,7 @@ fileprivate extension HTTPMethod {
     }
 }
 
-private extension Armin {
+private extension ArminClient {
     func privateRequst(task: ArRequestTaskProtocol,
                        responseOnMainQueue: Bool = true,
                        success: ArResponse?,
@@ -426,7 +426,7 @@ private extension Armin {
 }
 
 // MARK: Alamo instance
-private extension Armin {
+private extension ArminClient {
     func alamo(_ timeout: TimeInterval,
                id: Int) -> SessionManager {
         let configuration = URLSessionConfiguration.default
@@ -476,7 +476,7 @@ private extension Armin {
 }
 
 // MARK: Check Response
-private extension Armin {
+private extension ArminClient {
     enum ResponseCode {
         init(rawValue: Int) {
             if rawValue == 200 {
@@ -606,7 +606,7 @@ private extension Armin {
 }
 
 // MARK: Callback
-private extension Armin {
+private extension ArminClient {
     func requestSuccess(of event: ArRequestEvent,
                         startTime: TimeInterval,
                         with url: String) {
@@ -639,7 +639,7 @@ private extension Armin {
 }
 
 // MARK: Log
-private extension Armin {
+private extension ArminClient {
     func log(info: String,
              extra: String? = nil) {
         DispatchQueue.main.async { [weak self] in

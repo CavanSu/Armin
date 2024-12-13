@@ -10,7 +10,7 @@ import Cocoa
 import Armin
 
 class ViewController: NSViewController {
-    lazy var client = Armin(delegate: self,
+    lazy var client = ArminClient(delegate: self,
                             logTube: self)
     
     override func viewDidLoad() {
@@ -60,14 +60,14 @@ class ViewController: NSViewController {
 }
 
 extension ViewController: ArminDelegate {
-    func armin(_ client: Armin,
+    func armin(_ client: ArminClient,
                requestSuccess event: ArRequestEvent,
                startTime: TimeInterval,
                url: String) {
         print("request success, event: \(event.description), url: \(url)")
     }
     
-    func armin(_ client: Armin,
+    func armin(_ client: ArminClient,
                requestFail error: ArError,
                event: ArRequestEvent,
                url: String) {

@@ -21,7 +21,7 @@
     @objc public var reposeData: Data?
 }
 
-@objc open class ArminOC: Armin {
+@objc open class ArminOC: ArminClient {
     @objc public weak var delegateOC: ArminDelegateOC?
     @objc public weak var logTubeOC: ArLogTubeOC?
     
@@ -165,7 +165,7 @@
 }
 
 extension ArminOC: ArminDelegate {
-    public func armin(_ client: Armin,
+    public func armin(_ client: ArminClient,
                       requestSuccess event: ArRequestEvent,
                       startTime: TimeInterval,
                       url: String) {
@@ -176,7 +176,7 @@ extension ArminOC: ArminDelegate {
                                url: url)
     }
     
-    public func armin(_ client: Armin,
+    public func armin(_ client: ArminClient,
                       requestFail error: ArError,
                       event: ArRequestEvent,
                       url: String) {
